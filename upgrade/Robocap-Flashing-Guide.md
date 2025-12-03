@@ -2,7 +2,7 @@
 
 ## 0. Download Firmware
 
-[Download](s3://robocap-firmware)
+[Download](https://robocap-firmware.s3.ap-southeast-1.amazonaws.com/robocap-update-0.1.3-20251203-1801.img)
 
 ## 1. Install Flashing Tool
 
@@ -29,7 +29,7 @@ The extracted folder includes these files:
 2. Click **"Firmware"** to select your target firmware file.
 3. Click **"Upgrade"** to start flashing.
 
-> Note: The tool will show *"No device found"* initially — you need to detect a **maskrom device** or **loader device** first.
+> Note: The tool will show *"No device found"* initially —  a **maskrom device** or **loader device** should be detected first.
 
 ![](./upgrade.PNG)
 
