@@ -236,6 +236,9 @@ def write_csv(output_path: str, merged_data: List[Tuple]):
     Ensures all integers (especially 64-bit timestamps) are written as plain integers,
     not scientific notation.
     """
+    in_anglvel_scales = 0.000266316;  
+    in_acc_scales = 0.001197101;
+
     try:
         with open(output_path, 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
@@ -250,12 +253,12 @@ def write_csv(output_path: str, merged_data: List[Tuple]):
                 # and avoid any scientific notation
                 writer.writerow([
                     int(row[0]),  # timestamp (64-bit)
-                    int(row[1]),  # omega_x
-                    int(row[2]),  # omega_y
-                    int(row[3]),  # omega_z
-                    int(row[4]),  # alpha_x
-                    int(row[5]),  # alpha_y
-                    int(row[6])   # alpha_z
+                    float(row[1] * in_anglvel_scales),  # omega_x
+                    float(row[2] * in_anglvel_scales),  # omega_y
+                    float(row[3] * in_anglvel_scales),  # omega_z
+                    float(row[4] * in_acc_scales),  # alpha_x
+                    float(row[5] * in_acc_scales),  # alpha_y
+                    float(row[6] * in_acc_scales)   # alpha_z
                 ])
         
         print(f"Successfully wrote {len(merged_data)} rows to {output_path}")
