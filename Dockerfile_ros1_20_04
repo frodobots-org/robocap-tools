@@ -45,13 +45,20 @@ RUN cd $THIRD_PARTY_DIR/ceres-solver && \
         cmake .. && \
         make && make install
 
-ENV ROBOCAP /robocap
-RUN mkdir -p /robocap
-
 ADD third_party/code_utils $WORKSPACE_IMU/src/code_utils
 RUN cd $WORKSPACE_IMU && /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
 ADD third_party/imu_utils $WORKSPACE_IMU/src/imu_utils
 RUN cd $WORKSPACE_IMU && /bin/bash -c "source /opt/ros/noetic/setup.bash && catkin_make"
+
+ENV ROBOCAP_TOOLS /robocap-tools
+RUN mkdir -p $ROBOCAP_TOOLS
+ADD . $ROBOCAP_TOOLS
+RUN mkdir -p $ROBOCAP_TOOLS/build && cd $ROBOCAP_TOOLS/build && \
+    cmake .. && \
+    make
+
+RUN mkdir -p /dataset
+RUN mkdir -p /robocap-scripts
 
 # When a user runs a command we will run this code before theirs
 # This will allow for using the manual focal length if it fails to init
