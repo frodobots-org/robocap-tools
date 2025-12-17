@@ -54,7 +54,7 @@ fi
 echo -e "\nTarget files found:"
 echo "$TARGET_FILES"
 
-CAM_INTRINSIC_DATASET_DIR=/tmp/intrinsic-dataset-dir-$CAM_PARAM
+CAM_INTRINSIC_DATASET_DIR=/tmp/dataset/intrinsic/dataset-dir/$CAM_PARAM
 rm -rf $CAM_INTRINSIC_DATASET_DIR
 mkdir -p $CAM_INTRINSIC_DATASET_DIR
 
@@ -62,7 +62,7 @@ mkdir -p $CAM_INTRINSIC_DATASET_DIR
 /robocap-tools/build/bin/MP4FrameExtractor -i $TARGET_FILES -o $CAM_INTRINSIC_DATASET_DIR/$CAM_PARAM -r 5
 
 # Create rosbag.
-CAM_INTRINSIC_ROSBAG_DIR=/tmp/intrinsic-rosbag-dir-$CAM_PARAM
+CAM_INTRINSIC_ROSBAG_DIR=/tmp/dataset/intrinsic/rosbag/$CAM_PARAM
 if [ ! -d $CAM_INTRINSIC_ROSBAG_DIR ]; then
     mkdir -p $CAM_INTRINSIC_ROSBAG_DIR
 fi

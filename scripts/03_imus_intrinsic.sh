@@ -64,19 +64,20 @@ fi
 echo -e "\nTarget files found:"
 echo "$TARGET_FILES"
 
-IMU_INTRINSIC_DATASET_DIR=/tmp/intrinsic-dataset-dir-$IMU_PARAM
+IMU_INTRINSIC_DATASET_DIR=/tmp/dataset/intrinsic/dataset-dir/$IMU_PARAM
 if [ ! -d $IMU_INTRINSIC_DATASET_DIR ]; then
     mkdir -p $IMU_INTRINSIC_DATASET_DIR
 fi
 /robocap-scripts/merge_multi_imu_data.py -i ${TOP_DIR}/imu-static -o $IMU_INTRINSIC_DATASET_DIR/$IMU_PARAM.csv -r 500 -d $IMU_NUM
 
 # Create rosbag.
-IMU_INTRINSIC_ROSBAG_DIR=/tmp/intrinsic-rosbag-dir-$IMU_PARAM
+IMU_INTRINSIC_ROSBAG_DIR=/tmp/dataset/intrinsic/rosbag/$IMU_PARAM
 if [ ! -d $IMU_INTRINSIC_ROSBAG_DIR ]; then
     mkdir -p $IMU_INTRINSIC_ROSBAG_DIR
 fi
 cd /catkin_ws/ && source ./devel/setup.bash && rosrun kalibr kalibr_bagcreater --folder $IMU_INTRINSIC_DATASET_DIR/. --output-bag $IMU_INTRINSIC_ROSBAG_DIR/$IMU_PARAM.bag
 
 nohup rosbag play -r 20 $IMU_INTRINSIC_ROSBAG_DIR/$IMU_PARAM.bag  > /tmp/rosbag_launch.log 2>&1 &
-cd /catkin_ws_imu && source ./devel/setup.bash && roslaunch imu_utils imu$IMU_NUM.launch
+cd /catkin_ws_imu && source ./devel/setup.bash && roslaunch imu_utils -t 10 imu$IMU_NUM.launch
+/robocap-scripts/extract_imu_params.py -i /catkin_ws_imu/src/imu_utils/data -o /tmp/result/intrinsic/imu$IMU_NUM -d $IMU_NUM
 exit 0
