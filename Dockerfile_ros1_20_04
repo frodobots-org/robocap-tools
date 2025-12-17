@@ -60,6 +60,8 @@ RUN mkdir -p $ROBOCAP_TOOLS/build && cd $ROBOCAP_TOOLS/build && \
 RUN mkdir -p /dataset
 RUN mkdir -p /robocap-scripts
 
+ADD ./config/imu_intrinsic/imu*.launch $WORKSPACE_IMU/src/imu_utils/launch
+
 # When a user runs a command we will run this code before theirs
 # This will allow for using the manual focal length if it fails to init
 # https://github.com/ethz-asl/kalibr/pull/346

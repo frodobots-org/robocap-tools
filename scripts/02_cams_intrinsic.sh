@@ -54,7 +54,7 @@ fi
 echo -e "\nTarget files found:"
 echo "$TARGET_FILES"
 
-CAM_INTRINSIC_DATASET_DIR=/tmp/intinsic-dataset-dir-$CAM_PARAM
+CAM_INTRINSIC_DATASET_DIR=/tmp/intrinsic-dataset-dir-$CAM_PARAM
 rm -rf $CAM_INTRINSIC_DATASET_DIR
 mkdir -p $CAM_INTRINSIC_DATASET_DIR
 
@@ -69,5 +69,5 @@ fi
 cd /catkin_ws/ && source ./devel/setup.bash && rosrun kalibr kalibr_bagcreater --folder $CAM_INTRINSIC_DATASET_DIR/. --output-bag $CAM_INTRINSIC_ROSBAG_DIR/$CAM_PARAM.bag
 
 # Run kalibr intrinsic calibration.
-cd /catkin_ws/ && source ./devel/setup.bash && rosrun kalibr  kalibr_calibrate_cameras --bag $CAM_INTRINSIC_ROSBAG_DIR/$CAM_PARAM.bag --topics /$CAM_PARAM/image_raw --models pinhole-equi --target /robocap-tools/config/april_6x6.yaml --dont-show-report --no-outliers-removal --verbose
+cd /catkin_ws/ && source ./devel/setup.bash && rosrun kalibr  kalibr_calibrate_cameras --bag $CAM_INTRINSIC_ROSBAG_DIR/$CAM_PARAM.bag --topics /$CAM_PARAM/image_raw --models pinhole-equi --target /robocap-tools/config/april_6x6.yaml  --no-outliers-removal
 exit 0
