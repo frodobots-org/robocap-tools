@@ -50,7 +50,6 @@ if [ -z "$TARGET_FILES" ]; then
     exit 1
 fi
 
-
 # Output results
 echo -e "\nTarget files found:"
 echo "$TARGET_FILES"
@@ -70,5 +69,5 @@ fi
 cd /catkin_ws/ && source ./devel/setup.bash && rosrun kalibr kalibr_bagcreater --folder $CAM_INTRINSIC_DATASET_DIR/. --output-bag $CAM_INTRINSIC_ROSBAG_DIR/$CAM_PARAM.bag
 
 # Run kalibr intrinsic calibration.
-cd /catkin_ws/ && source ./devel/setup.bash && rosrun kalibr  kalibr_calibrate_cameras --bag $CAM_INTRINSIC_ROSBAG_DIR/$CAM_PARAM.bag --topics /$CAM_PARAM/image_raw --models omni-radtan --target /robocap-tools/config/april_6x6.yaml
+cd /catkin_ws/ && source ./devel/setup.bash && rosrun kalibr  kalibr_calibrate_cameras --bag $CAM_INTRINSIC_ROSBAG_DIR/$CAM_PARAM.bag --topics /$CAM_PARAM/image_raw --models pinhole-equi --target /robocap-tools/config/april_6x6.yaml --dont-show-report --no-outliers-removal --verbose
 exit 0
