@@ -5,11 +5,21 @@ Extract IMU parameters from imu{n}_imu_param.yaml file and convert to kalibr for
 
 import argparse
 import os
-import re
 import sys
 import yaml
 from pathlib import Path
-from typing import Optional
+
+# Add script directory to path to ensure robocap_env can be imported
+script_dir = os.path.dirname(os.path.abspath(__file__))
+if script_dir not in sys.path:
+    sys.path.insert(0, script_dir)
+
+# Import environment variables
+try:
+    import robocap_env
+except ImportError:
+    print("Warning: Could not import robocap_env, using default topic names", file=sys.stderr)
+    robocap_env = None
 
 
 def parse_arguments():
@@ -19,60 +29,18 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Example:
-  # Process all IMU devices
-  python extract_imu_params.py -i /path/to/search/dir -o /path/to/output/dir
-  
-  # Process specific IMU device
-  python extract_imu_params.py -i /path/to/search/dir -o /path/to/output/dir -d 0
+  # Process single file
+  python extract_imu_params.py -i /path/to/imu0_imu_param.yaml -o /path/to/output.yaml
         """
     )
     parser.add_argument('-i', '--input', required=True,
-                        help='Input directory to search for imu{n}_imu_param.yaml files')
+                        help='Input YAML file path (e.g., imu0_imu_param.yaml)')
     parser.add_argument('-o', '--output', required=True,
-                        help='Output directory for converted parameter files')
-    parser.add_argument('-d', '--imu-dev', type=int, choices=[0, 1, 2],
-                        help='IMU device number to process (0, 1, or 2). If not specified, process all available IMU devices')
+                        help='Output YAML file path for converted parameters')
     
     return parser.parse_args()
 
 
-def find_imu_param_files(search_dir: str, imu_dev: Optional[int] = None):
-    """
-    Find all imu{n}_imu_param.yaml files in the directory.
-    
-    Args:
-        search_dir: Directory path to search
-        imu_dev: Optional IMU device number (0, 1, or 2) to filter
-    
-    Returns:
-        List of tuples: (imu_number, file_path)
-    """
-    search_path = Path(search_dir)
-    if not search_path.is_dir():
-        print(f"Error: {search_dir} is not a directory", file=sys.stderr)
-        sys.exit(1)
-    
-    # Pattern to match: imu{n}_imu_param.yaml
-    pattern = re.compile(r'imu(\d+)_imu_param\.yaml$')
-    
-    imu_files = []
-    
-    # Search recursively in the directory
-    for file_path in search_path.rglob('imu*_imu_param.yaml'):
-        match = pattern.match(file_path.name)
-        if match:
-            imu_num = int(match.group(1))
-            
-            # Filter by imu_dev if specified
-            if imu_dev is not None and imu_num != imu_dev:
-                continue
-            
-            imu_files.append((imu_num, str(file_path)))
-    
-    # Sort by IMU number
-    imu_files.sort(key=lambda x: x[0])
-    
-    return imu_files
 
 
 def load_yaml_file(file_path: str):
@@ -168,7 +136,13 @@ def write_kalibr_format(output_path: str, values: dict, update_rate: float = 500
             f.write(f"gyroscope_noise_density:     {values['gyr_n']:.12e}   #Noise density (continuous-time)\n")
             f.write(f"gyroscope_random_walk:       {values['gyr_w']:.12e}   #Bias random walk\n")
             f.write("\n")
-            f.write(f"rostopic:                    /{values['imu_name']}      #the IMU ROS topic\n")
+            # Get ROS topic from robocap_env based on imu_name
+            if robocap_env is not None:
+                ros_topic = robocap_env.get_imu_topic_from_name(values['imu_name'])
+            else:
+                # Fallback: use imu_name directly
+                ros_topic = f"/{values['imu_name']}"
+            f.write(f"rostopic:                    {ros_topic}      #the IMU ROS topic\n")
             f.write(f"update_rate:                 {update_rate:.1f}      #Hz (for discretization of the values above)\n")
         
         print(f"Successfully wrote converted parameters to {output_path}")
@@ -181,44 +155,28 @@ def main():
     """Main function."""
     args = parse_arguments()
     
-    # Find IMU parameter files
-    if args.imu_dev is not None:
-        print(f"Searching for imu{args.imu_dev}_imu_param.yaml files in {args.input}...")
-    else:
-        print(f"Searching for imu*_imu_param.yaml files in {args.input}...")
-    imu_files = find_imu_param_files(args.input, args.imu_dev)
-    
-    if not imu_files:
-        if args.imu_dev is not None:
-            print(f"Error: No imu{args.imu_dev}_imu_param.yaml files found in {args.input}", file=sys.stderr)
-        else:
-            print(f"Error: No imu*_imu_param.yaml files found in {args.input}", file=sys.stderr)
+    # Check if input file exists
+    input_path = Path(args.input)
+    if not input_path.is_file():
+        print(f"Error: Input file does not exist: {args.input}", file=sys.stderr)
         sys.exit(1)
     
-    print(f"Found {len(imu_files)} IMU parameter file(s)")
+    print(f"Processing: {args.input}")
+    
+    # Load YAML file
+    data = load_yaml_file(str(input_path))
+    
+    # Extract avg-axis values
+    values = extract_avg_axis_values(data)
     
     # Create output directory if it doesn't exist
     output_path = Path(args.output)
-    output_path.mkdir(parents=True, exist_ok=True)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     
-    # Process each file
-    for imu_num, file_path in imu_files:
-        print(f"\nProcessing: {os.path.basename(file_path)}")
-        
-        # Load YAML file
-        data = load_yaml_file(file_path)
-        
-        # Extract avg-axis values
-        values = extract_avg_axis_values(data)
-        
-        # Generate output filename (same as input filename)
-        output_filename = os.path.basename(file_path)
-        output_file_path = output_path / output_filename
-        
-        # Write converted format
-        write_kalibr_format(str(output_file_path), values)
+    # Write converted format
+    write_kalibr_format(str(output_path), values)
     
-    print(f"\nDone! Processed {len(imu_files)} file(s)")
+    print(f"\nDone! Output written to {args.output}")
 
 
 if __name__ == '__main__':
