@@ -106,7 +106,7 @@ source /opt/ros/noetic/setup.bash
 ```
 
 * run front(eye/left/right) cams extrinsic calibration program
-  
+  >left front cam + right front cam + imu0 + imu1 + imu2 
 ```shell
-/robocap-scripts/calib_cams_extrinsic.py front
+/robocap-scripts/calib_cams_imu_extrinsic.py front
 ```
