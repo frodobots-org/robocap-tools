@@ -132,8 +132,6 @@ def create_rosbag(input_dir: str, output_rosbag: str, imu_src_rate: int = 500) -
         create_rosbag_script,
         input_dir,
         "-ir_src", str(imu_src_rate),  # IMU source rate
-        "-vr", "20",
-        "-ir_dst", "200",
         "-o", output_rosbag  # Output rosbag path
     ]
     
@@ -251,7 +249,9 @@ def run_kalibr_extrinsic_calibration(
     #        --imu [imu0.yaml ... imuN.yaml] --imu-models [MODEL0 ... MODELN] --target [target.yaml]
     kalibr_cmd = [
         'rosrun kalibr kalibr_calibrate_imu_camera',
+        '--perform-synchronization',
         '--bag', rosbag_path,
+        '--bag-from-to', '5 65',
         '--timeoffset-padding', '0.1',
         '--cam', camchain_file,
         '--imu'] + imu_yaml_files + [
@@ -335,7 +335,7 @@ Examples:
     parser.add_argument(
         '--timeout',
         type=int,
-        default=900,
+        default=1800,
         help='Kalibr calibration timeout in seconds (default: 900 = 15 minutes)'
     )
     

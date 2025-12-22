@@ -34,9 +34,9 @@ ROSBAG_FILE_IMUS_CAM_L_EXTRINSIC = f"{OUTPUT_IMUS_CAM_L_EXTRINSIC_DIR}/imus_cam_
 ROSBAG_FILE_IMUS_CAM_R_EXTRINSIC = f"{OUTPUT_IMUS_CAM_R_EXTRINSIC_DIR}/imus_cam_r_extrinsic.bag"
 
 CAMCHAIN_FILE_LR_FRONT = f"{OUTPUT_IMUS_CAM_LR_FRONT_EXTRINSIC_DIR}/cam_lr_front_intrinsic-camchain.yaml"
-CAMCHAIN_FILE_LR_EYE = f"{OUTPUT_IMUS_CAM_LR_EYE_EXTRINSIC_DIR}/cam_lr_eye_intrinsic_camchain.yaml"
-CAMCHAIN_FILE_L = f"{OUTPUT_IMUS_CAM_L_EXTRINSIC_DIR}/cam_l_intrinsic_camchain.yaml"
-CAMCHAIN_FILE_R = f"{OUTPUT_IMUS_CAM_R_EXTRINSIC_DIR}/cam_r_intrinsic_camchain.yaml"
+CAMCHAIN_FILE_LR_EYE = f"{OUTPUT_IMUS_CAM_LR_EYE_EXTRINSIC_DIR}/cam_lr_eye_intrinsic-camchain.yaml"
+CAMCHAIN_FILE_L = f"{OUTPUT_IMUS_CAM_L_EXTRINSIC_DIR}/cam_l_intrinsic-camchain.yaml"
+CAMCHAIN_FILE_R = f"{OUTPUT_IMUS_CAM_R_EXTRINSIC_DIR}/cam_r_intrinsic-camchain.yaml"
 
 YAML_FILE_IMU_MID_0 = f"{OUTPUT_IMUS_INTRINSIC_DIR}/imu_mid_0.yaml"
 YAML_FILE_IMU_RIGHT_1 = f"{OUTPUT_IMUS_INTRINSIC_DIR}/imu_right_1.yaml"
