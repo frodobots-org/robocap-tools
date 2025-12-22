@@ -5,18 +5,21 @@
 IMAGE_NAME := robocap-calib
 ROOT_DIR := $(shell pwd)
 CODE_UTILS_SRC_DIR := $(ROOT_DIR)/third_party/code_utils
+KALIBR_SRC_DIR := $(ROOT_DIR)/third_party/kalibr
 CODE_UTILS_PATCH_FILE := $(ROOT_DIR)/patches/code_utils_20251217.patch
+KALIBR_PATCH_FILE := $(ROOT_DIR)/patches/kalibr_20251222.patch
 
-.PHONY: all patch docker_image docker_run clean help
+.PHONY: all patches docker_image docker_run clean help
 
-all : patch docker_image
+all : patches docker_image
 	@echo "All done!"
 
 help:
 	@echo "You do not need help!"
 
-patch:
+patches:
 	cd $(CODE_UTILS_SRC_DIR) && git checkout . && git apply $(CODE_UTILS_PATCH_FILE)
+	cd $(KALIBR_SRC_DIR) && git checkout . && git apply $(KALIBR_PATCH_FILE)
 	@echo "Patch done!"
 
 docker_image:
