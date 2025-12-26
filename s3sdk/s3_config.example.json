@@ -1,0 +1,7 @@
+{
+    "access_key": "YOUR_ACCESS_KEY_HERE",
+    "secret_key": "YOUR_SECRET_KEY_HERE",
+    "bucket_name": "YOUR_BUCKET_NAME_HERE",
+    "region": "us-east-1"
+}
+
