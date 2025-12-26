@@ -92,7 +92,7 @@ def get_config_for_mode(mode: str) -> tuple:
     
     return input_dir, output_rosbag, camchain_file
 
-def create_rosbag(input_dir: str, output_rosbag: str, imu_src_rate: int = 500) -> bool:
+def create_rosbag(input_dir: str, output_rosbag: str, imu_src_rate: int = 200) -> bool:
     """
     Create rosbag from database files using create_rosbag_from_db.py.
     Note: Video fps is not downsampled (no -vr parameter).
@@ -323,8 +323,8 @@ Examples:
     parser.add_argument(
         '--imu-rate',
         type=int,
-        default=500,
-        help='IMU source sampling rate (Hz), default: 500'
+        default=200,
+        help='IMU source sampling rate (Hz), default: 200'
     )
     parser.add_argument(
         '--imu-models',
@@ -338,7 +338,7 @@ Examples:
         default=1800,
         help='Kalibr calibration timeout in seconds (default: 900 = 15 minutes)'
     )
-    
+
     args = parser.parse_args()
     
     print("=" * 80)

@@ -72,15 +72,15 @@ def create_rosbag_from_db():
         print(f"Error: Input directory does not exist: {input_dir}")
         sys.exit(1)
     
-    # IMU source rate is typically 500 Hz (from merge_multi_imu_data.py usage)
-    # We'll use 500 Hz as source rate and optionally downsample if needed
+    # IMU source rate is typically 200 Hz (from merge_multi_imu_data.py usage)
+    # We'll use 200 Hz as source rate and optionally downsample if needed
     # Get the script directory to use relative paths
     script_dir = os.path.dirname(os.path.abspath(__file__))
     cmd = [
         sys.executable,
         os.path.join(script_dir, "create_rosbag_from_db.py"),
         input_dir,
-        "-ir_src", "500",
+        "-ir_src", "200",
         "-o", output_bag
     ]
     

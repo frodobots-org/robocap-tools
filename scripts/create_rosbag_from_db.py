@@ -187,7 +187,7 @@ def find_best_match(gyro_timestamp: int, acc_data: List[Tuple], sample_interval_
     
     return None, best_index
 
-def merge_imu_data(gyro_data: List[Tuple], acc_data: List[Tuple], sampling_rate: int = 500) -> List[Tuple]:
+def merge_imu_data(gyro_data: List[Tuple], acc_data: List[Tuple], sampling_rate: int = 200) -> List[Tuple]:
     """
     Merge gyro and acc data
     Returns: [(timestamp, omega_x, omega_y, omega_z, alpha_x, alpha_y, alpha_z), ...]

@@ -81,7 +81,7 @@ def get_config_for_mode(mode: str) -> tuple:
     
     return input_dir, output_rosbag
 
-def create_rosbag(input_dir: str, output_rosbag: str, imu_src_rate: int = 500) -> bool:
+def create_rosbag(input_dir: str, output_rosbag: str, imu_src_rate: int = 200) -> bool:
     """
     Create rosbag from database files using create_rosbag_from_db.py.
     
@@ -277,8 +277,8 @@ Examples:
     parser.add_argument(
         '--imu-rate',
         type=int,
-        default=500,
-        help='IMU source sampling rate (Hz), default: 500'
+        default=200,
+        help='IMU source sampling rate (Hz), default: 200'
     )
     parser.add_argument(
         '--timeout',
