@@ -3,6 +3,7 @@ Low-level S3 client wrapper using boto3.
 """
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError, BotoCoreError
 from typing import List, Optional, BinaryIO, Dict
 
@@ -37,11 +38,18 @@ class S3Client:
     def client(self):
         """Get or create boto3 S3 client."""
         if self._client is None:
+            # Create boto3 config with timeout settings
+            boto_config = Config(
+                connect_timeout=self.config.connect_timeout,
+                read_timeout=self.config.read_timeout,
+                retries={'max_attempts': 3}
+            )
             self._client = boto3.client(
                 's3',
                 aws_access_key_id=self.config.access_key,
                 aws_secret_access_key=self.config.secret_key,
-                region_name=self.config.region
+                region_name=self.config.region,
+                config=boto_config
             )
         return self._client
 
@@ -49,11 +57,18 @@ class S3Client:
     def resource(self):
         """Get or create boto3 S3 resource."""
         if self._resource is None:
+            # Create boto3 config with timeout settings
+            boto_config = Config(
+                connect_timeout=self.config.connect_timeout,
+                read_timeout=self.config.read_timeout,
+                retries={'max_attempts': 3}
+            )
             self._resource = boto3.resource(
                 's3',
                 aws_access_key_id=self.config.access_key,
                 aws_secret_access_key=self.config.secret_key,
-                region_name=self.config.region
+                region_name=self.config.region,
+                config=boto_config
             )
         return self._resource
 

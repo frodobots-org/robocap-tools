@@ -22,7 +22,9 @@ def download_device_data(
     sheet_name: Optional[str] = None,
     column: int = 0,
     header: Optional[int] = None,
-    device_prefix: str = ''
+    device_prefix: str = '',
+    connect_timeout: Optional[int] = None,
+    read_timeout: Optional[int] = None
 ) -> None:
     """
     Download device data from S3 based on device list in Excel file.
@@ -64,7 +66,9 @@ def download_device_data(
         access_key=access_key,
         secret_key=secret_key,
         bucket_name=bucket_name,
-        region=region
+        region=region,
+        connect_timeout=connect_timeout if connect_timeout is not None else 60,
+        read_timeout=read_timeout if read_timeout is not None else 60
     )
     sdk = S3SDK(config)
 
@@ -208,6 +212,20 @@ def main():
         help='Prefix to add before device ID in S3 path (default: empty)'
     )
     
+    parser.add_argument(
+        '--connect-timeout',
+        type=int,
+        default=None,
+        help='Connection timeout in seconds (default: 60, or from config file)'
+    )
+    
+    parser.add_argument(
+        '--read-timeout',
+        type=int,
+        default=None,
+        help='Read timeout in seconds (default: 60, or from config file)'
+    )
+    
     args = parser.parse_args()
     
     # Load configuration from file
@@ -217,6 +235,9 @@ def main():
         secret_key = args.secret_key or config.secret_key
         bucket_name = args.bucket or config.bucket_name
         region = args.region or config.region
+        # Use command line timeout if provided, otherwise use config file value, otherwise default to 60
+        connect_timeout = args.connect_timeout if args.connect_timeout is not None else config.connect_timeout
+        read_timeout = args.read_timeout if args.read_timeout is not None else config.read_timeout
     except FileNotFoundError as e:
         print(f"Error: {e}")
         print("\nPlease create a configuration file or provide credentials via command line arguments.")
@@ -232,7 +253,9 @@ def main():
         sheet_name=args.sheet_name,
         column=args.column,
         header=args.header,
-        device_prefix=args.device_prefix
+        device_prefix=args.device_prefix,
+        connect_timeout=connect_timeout,
+        read_timeout=read_timeout
     )
 
 

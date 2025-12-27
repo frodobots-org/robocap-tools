@@ -63,7 +63,9 @@ def load_s3_config(config_file: str = 's3_config.json') -> S3Config:
         access_key=config_data['access_key'],
         secret_key=config_data['secret_key'],
         bucket_name=config_data['bucket_name'],
-        region=config_data.get('region', 'us-east-1')
+        region=config_data.get('region', 'us-east-1'),
+        connect_timeout=config_data.get('connect_timeout', 60),
+        read_timeout=config_data.get('read_timeout', 60)
     )
 
     return config

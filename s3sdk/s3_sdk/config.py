@@ -9,7 +9,15 @@ class S3Config:
     Stores AWS credentials (Access Key, Secret Key), bucket name, and region.
     """
 
-    def __init__(self, access_key: str, secret_key: str, bucket_name: str, region: str = 'us-east-1'):
+    def __init__(
+        self,
+        access_key: str,
+        secret_key: str,
+        bucket_name: str,
+        region: str = 'us-east-1',
+        connect_timeout: int = 60,
+        read_timeout: int = 60
+    ):
         """
         Initialize S3 configuration.
 
@@ -18,11 +26,15 @@ class S3Config:
             secret_key: AWS Secret Access Key
             bucket_name: S3 bucket name
             region: AWS region (default: 'us-east-1')
+            connect_timeout: Connection timeout in seconds (default: 60)
+            read_timeout: Read timeout in seconds (default: 60)
         """
         self.access_key = access_key
         self.secret_key = secret_key
         self.bucket_name = bucket_name
         self.region = region
+        self.connect_timeout = connect_timeout
+        self.read_timeout = read_timeout
 
     def validate(self) -> bool:
         """
