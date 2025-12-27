@@ -57,7 +57,7 @@ RUN mkdir -p $ROBOCAP_TOOLS/build && cd $ROBOCAP_TOOLS/build && \
     cmake .. && \
     make
 
-RUN cd $ROBOCAP_TOOLS/scripts && pip install -r requirements.txt && \
+RUN cd $ROBOCAP_TOOLS/s3sdk && pip install -r requirements.txt && \
 	pip install numpy==1.22
 RUN mkdir -p /dataset
 RUN mkdir -p /robocap
