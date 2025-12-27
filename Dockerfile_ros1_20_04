@@ -57,12 +57,14 @@ RUN mkdir -p $ROBOCAP_TOOLS/build && cd $ROBOCAP_TOOLS/build && \
     cmake .. && \
     make
 
+RUN cd $ROBOCAP_TOOLS/scripts && pip install -r requirements.txt && \
+	pip install numpy==1.22
 RUN mkdir -p /dataset
-RUN mkdir -p /robocap-scripts
+RUN mkdir -p /robocap
 
 ADD ./config/imu-launch-files/imu*.launch $WORKSPACE_IMU/src/imu_utils/launch/
 
-RUN apt-get install -y vim
+RUN apt-get install -y vim tree
 
 # When a user runs a command we will run this code before theirs
 # This will allow for using the manual focal length if it fails to init

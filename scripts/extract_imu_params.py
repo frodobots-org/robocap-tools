@@ -117,7 +117,7 @@ def extract_avg_axis_values(data: dict):
         sys.exit(1)
 
 
-def write_kalibr_format(output_path: str, values: dict, update_rate: float = 500.0):
+def write_kalibr_format(output_path: str, values: dict, update_rate: float = 200.0):
     """
     Write extracted values to kalibr format file.
     
