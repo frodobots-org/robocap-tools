@@ -71,8 +71,8 @@ Examples:
     parser.add_argument(
         '--timeout',
         type=int,
-        default=1800,
-        help='Kalibr calibration timeout in seconds (default: 1800 = 30 minutes)'
+        default=3600,
+        help='Kalibr calibration timeout in seconds (default: 3600 = 60 minutes)'
     )
     ArgumentParserHelper.add_common_args(parser)
     

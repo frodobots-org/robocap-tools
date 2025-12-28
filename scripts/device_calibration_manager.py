@@ -57,18 +57,18 @@ class DeviceCalibrationManager:
     
     def calibrate_all(self) -> Dict[CalibrationTaskType, bool]:
         """
-        执行所有标定任务（单个设备总超时时间：2小时）
+        执行所有标定任务（单个设备总超时时间：3小时）
         
         Returns:
             任务类型到成功状态的映射
         """
         import time
         start_time = time.time()
-        timeout_seconds = 7200  # 2小时
+        timeout_seconds = 10800  # 3小时
         
         print(f"\n{'='*80}")
         print(f"开始标定设备: {self.device_id}")
-        print(f"[超时设置] 单个设备总超时时间: 2小时")
+        print(f"[超时设置] 单个设备总超时时间: 3小时")
         print(f"{'='*80}\n")
         
         results = {}
@@ -78,7 +78,7 @@ class DeviceCalibrationManager:
             # 检查总超时时间
             elapsed_time = time.time() - start_time
             if elapsed_time > timeout_seconds:
-                print(f"\n[超时] 设备 {self.device_id} 标定总时间超过2小时，停止执行")
+                print(f"\n[超时] 设备 {self.device_id} 标定总时间超过3小时，停止执行")
                 # 将剩余任务标记为失败
                 remaining_tasks = [t for t in task_types if t not in results]
                 for remaining_task in remaining_tasks:

@@ -70,14 +70,14 @@ class IMUCalibrationHelper:
         
         return process
     
-    def wait_for_completion(self, process: subprocess.Popen, imu_num: int, timeout: int = 180) -> bool:
+    def wait_for_completion(self, process: subprocess.Popen, imu_num: int, timeout: int = 300) -> bool:
         """
         等待roslaunch进程完成
         
         Args:
             process: subprocess.Popen对象
             imu_num: IMU编号
-            timeout: 超时时间（秒，默认180）
+            timeout: 超时时间（秒，默认300）
             
         Returns:
             是否成功完成

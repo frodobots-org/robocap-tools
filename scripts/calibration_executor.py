@@ -86,7 +86,7 @@ class CalibrationExecutor:
             # 执行脚本
             print(f"[执行] {task.task_type.value} - 设备: {self.device_id}")
             print(f"[命令] {' '.join(cmd)}")
-            print(f"[超时] 2小时")
+            print(f"[超时] 3小时")
             print("-" * 80)
             
             # 实时输出日志到终端
@@ -104,7 +104,7 @@ class CalibrationExecutor:
             
             # 实时读取并输出日志
             stdout_lines = []
-            timeout_seconds = 7200  # 2小时超时
+            timeout_seconds = 10800 # 3小时超时
             timeout_occurred = threading.Event()
             
             def read_output():
@@ -182,7 +182,7 @@ class CalibrationExecutor:
             return {
                 'success': False,
                 'output_files': [],
-                'error_message': "Script execution timed out after 2 hours"
+                'error_message': "Script execution timed out after 3 hours"
             }
         except Exception as e:
             return {

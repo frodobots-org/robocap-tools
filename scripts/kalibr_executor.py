@@ -35,7 +35,7 @@ class KalibrExecutor:
         self,
         rosbag_path: str,
         camera_topics: List[str],
-        timeout: int = 600
+        timeout: int = 1800
     ) -> bool:
         """
         运行kalibr相机内参标定
@@ -43,7 +43,7 @@ class KalibrExecutor:
         Args:
             rosbag_path: rosbag文件路径
             camera_topics: 相机topic列表
-            timeout: 超时时间（秒，默认600）
+            timeout: 超时时间（秒，默认1800）
             
         Returns:
             是否成功
@@ -82,7 +82,7 @@ class KalibrExecutor:
         camchain_file: str,
         imu_yaml_files: List[str],
         imu_models: Optional[List[str]] = None,
-        timeout: int = 1800
+        timeout: int = 3600
     ) -> bool:
         """
         运行kalibr相机-IMU外参标定
@@ -92,7 +92,7 @@ class KalibrExecutor:
             camchain_file: camchain文件路径
             imu_yaml_files: IMU YAML文件列表
             imu_models: IMU模型列表（可选，默认使用'calibrated'）
-            timeout: 超时时间（秒，默认1800）
+            timeout: 超时时间（秒，默认3600）
             
         Returns:
             是否成功
