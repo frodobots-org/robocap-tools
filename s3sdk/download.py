@@ -12,6 +12,109 @@ from s3_sdk import S3Config, S3SDK
 from config_reader import load_s3_config
 
 
+def download_single_device(
+    device_id: str,
+    output_dir: str,
+    access_key: str,
+    secret_key: str,
+    bucket_name: str,
+    region: str = 'us-east-1',
+    device_prefix: str = '',
+    connect_timeout: Optional[int] = None,
+    read_timeout: Optional[int] = None
+) -> None:
+    """
+    Download data for a single device from S3.
+
+    Args:
+        device_id: Device ID to download
+        output_dir: Output directory to save downloaded data
+        access_key: AWS Access Key ID
+        secret_key: AWS Secret Access Key
+        bucket_name: S3 bucket name
+        region: AWS region (default: 'us-east-1')
+        device_prefix: Prefix to add before device ID in S3 path (default: '')
+        connect_timeout: Connection timeout in seconds
+        read_timeout: Read timeout in seconds
+    """
+    device_id = device_id.strip()
+    if not device_id:
+        print("Error: Device ID cannot be empty")
+        return
+
+    # Initialize S3 SDK
+    config = S3Config(
+        access_key=access_key,
+        secret_key=secret_key,
+        bucket_name=bucket_name,
+        region=region,
+        connect_timeout=connect_timeout if connect_timeout is not None else 60,
+        read_timeout=read_timeout if read_timeout is not None else 60
+    )
+    sdk = S3SDK(config)
+
+    # Create output directory if it doesn't exist
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+    print(f"Output directory: {output_path.absolute()}")
+
+    print(f"\nProcessing device: {device_id}")
+
+    # Construct S3 folder path
+    s3_folder = f"{device_prefix}{device_id}/"
+    if device_prefix and not device_prefix.endswith('/'):
+        s3_folder = f"{device_prefix}/{device_id}/"
+
+    # Construct local output path
+    local_device_dir = output_path / device_id
+
+    try:
+        # Download folder from S3 (will list all objects with prefix and download them)
+        print(f"  Downloading from S3: {s3_folder}")
+        print(f"  Saving to: {local_device_dir}")
+        results = sdk.download_folder(s3_folder, str(local_device_dir))
+
+        # Count successful downloads
+        successful = sum(1 for _, _, success in results if success)
+        total = len(results)
+
+        if total > 0:
+            print(f"  Downloaded {successful}/{total} files")
+            if successful > 0:
+                print(f"\n{'='*60}")
+                print(f"Download Summary:")
+                print(f"  Device: {device_id}")
+                print(f"  Status: Success")
+                print(f"  Files downloaded: {successful}/{total}")
+                print(f"  Output directory: {output_path.absolute()}")
+                print(f"{'='*60}")
+            else:
+                print(f"\n{'='*60}")
+                print(f"Download Summary:")
+                print(f"  Device: {device_id}")
+                print(f"  Status: Failed (no files downloaded)")
+                print(f"  Output directory: {output_path.absolute()}")
+                print(f"{'='*60}")
+        else:
+            print(f"  No files found with prefix '{s3_folder}'")
+            print(f"\n{'='*60}")
+            print(f"Download Summary:")
+            print(f"  Device: {device_id}")
+            print(f"  Status: Failed (no files found)")
+            print(f"  Output directory: {output_path.absolute()}")
+            print(f"{'='*60}")
+
+    except Exception as e:
+        print(f"  Error downloading device {device_id}: {e}")
+        print(f"\n{'='*60}")
+        print(f"Download Summary:")
+        print(f"  Device: {device_id}")
+        print(f"  Status: Failed")
+        print(f"  Error: {e}")
+        print(f"  Output directory: {output_path.absolute()}")
+        print(f"{'='*60}")
+
+
 def download_device_data(
     xlsx_filename: str,
     output_dir: str,
@@ -40,6 +143,8 @@ def download_device_data(
         column: Column index containing device IDs (default: 0)
         header: Header row index (default: None for no header)
         device_prefix: Prefix to add before device ID in S3 path (default: '')
+        connect_timeout: Connection timeout in seconds
+        read_timeout: Read timeout in seconds
     """
     print(f"Reading device list from: {xlsx_filename}")
     
@@ -134,13 +239,21 @@ def download_device_data(
 def main():
     """Main function with command line argument parsing."""
     parser = argparse.ArgumentParser(
-        description='Download device data from S3 based on device list in Excel file'
+        description='Download device data from S3. Can download from Excel file or single device ID.'
     )
     
     parser.add_argument(
-        'xlsx_file',
+        '--xlsx-file',
         type=str,
-        help='Path to Excel file containing device list'
+        default=None,
+        help='Path to Excel file containing device list (optional if --device-id is provided)'
+    )
+    
+    parser.add_argument(
+        '--device-id',
+        type=str,
+        default=None,
+        help='Single device ID to download (optional if --xlsx-file is provided)'
     )
     
     parser.add_argument(
@@ -228,6 +341,13 @@ def main():
     
     args = parser.parse_args()
     
+    # Validate arguments: must provide either xlsx_file or device_id
+    if not args.xlsx_file and not args.device_id:
+        parser.error("Either --xlsx-file or --device-id must be provided")
+    
+    if args.xlsx_file and args.device_id:
+        parser.error("Cannot specify both --xlsx-file and --device-id. Please choose one.")
+    
     # Load configuration from file
     try:
         config = load_s3_config(args.config)
@@ -243,20 +363,36 @@ def main():
         print("\nPlease create a configuration file or provide credentials via command line arguments.")
         return
     
-    download_device_data(
-        xlsx_filename=args.xlsx_file,
-        output_dir=args.output_dir,
-        access_key=access_key,
-        secret_key=secret_key,
-        bucket_name=bucket_name,
-        region=region,
-        sheet_name=args.sheet_name,
-        column=args.column,
-        header=args.header,
-        device_prefix=args.device_prefix,
-        connect_timeout=connect_timeout,
-        read_timeout=read_timeout
-    )
+    # Download based on provided input
+    if args.device_id:
+        # Download single device
+        download_single_device(
+            device_id=args.device_id,
+            output_dir=args.output_dir,
+            access_key=access_key,
+            secret_key=secret_key,
+            bucket_name=bucket_name,
+            region=region,
+            device_prefix=args.device_prefix,
+            connect_timeout=connect_timeout,
+            read_timeout=read_timeout
+        )
+    else:
+        # Download from Excel file
+        download_device_data(
+            xlsx_filename=args.xlsx_file,
+            output_dir=args.output_dir,
+            access_key=access_key,
+            secret_key=secret_key,
+            bucket_name=bucket_name,
+            region=region,
+            sheet_name=args.sheet_name,
+            column=args.column,
+            header=args.header,
+            device_prefix=args.device_prefix,
+            connect_timeout=connect_timeout,
+            read_timeout=read_timeout
+        )
 
 
 if __name__ == '__main__':
