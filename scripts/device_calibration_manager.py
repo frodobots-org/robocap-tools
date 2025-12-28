@@ -166,6 +166,9 @@ class DeviceCalibrationManager:
         # 执行标定任务
         execution_result = self.executor.execute_task(task)
         
+        # 无论成功或失败，都清理中间文件（.log和.bag文件）以节省空间
+        self._cleanup_intermediate_files(task_type, task)
+        
         if not execution_result['success']:
             print(f"执行失败: {execution_result.get('error_message', 'Unknown error')}")
             return False
@@ -181,9 +184,6 @@ class DeviceCalibrationManager:
                     task_type.value,
                     filename
                 )
-        
-        # 清理中间文件（.log和.bag文件）
-        self._cleanup_intermediate_files(task_type, task)
         
         return True
     
