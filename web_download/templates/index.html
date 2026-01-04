@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calibration Results Download</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        button {
+            flex: 1;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #e8e8e8;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .message.error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .message.success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        .message.info {
+            background: #eef;
+            color: #33c;
+            border: 1px solid #ccf;
+        }
+
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .info-box strong {
+            color: #333;
+        }
+
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .progress-text {
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+        }
+
+        .progress-details {
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📥 Calibration Results Download</h1>
+        <p class="subtitle">Download calibration results from S3</p>
+
+        <form id="downloadForm">
+            <div class="form-group">
+                <label for="deviceId">Device ID</label>
+                <input 
+                    type="text" 
+                    id="deviceId" 
+                    name="deviceId" 
+                    placeholder="Enter device ID (e.g., 12d4730bb6a4382c)"
+                    required
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="button-group">
+                <button type="button" class="btn-secondary" id="checkBtn" onclick="checkDevice()">
+                    Check
+                </button>
+                <button type="submit" class="btn-primary" id="downloadBtn">
+                    Download
+                </button>
+            </div>
+        </form>
+
+        <div id="message" class="message"></div>
+
+        <div id="progressContainer" class="progress-container">
+            <div class="progress-bar-container">
+                <div id="progressBar" class="progress-bar"></div>
+            </div>
+            <div id="progressText" class="progress-text">Initializing...</div>
+            <div id="progressDetails" class="progress-details"></div>
+        </div>
+
+        <div class="info-box">
+            <strong>Note:</strong> The download will retrieve the entire <code>results</code> directory 
+            for the specified device from S3 and package it as a ZIP file.
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('downloadForm');
+        const deviceIdInput = document.getElementById('deviceId');
+        const checkBtn = document.getElementById('checkBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const messageDiv = document.getElementById('message');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressDetails = document.getElementById('progressDetails');
+        
+        let progressEventSource = null;
+
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            messageDiv.style.display = 'block';
+        }
+
+        function hideMessage() {
+            messageDiv.style.display = 'none';
+        }
+
+        function setLoading(button, isLoading) {
+            if (isLoading) {
+                button.disabled = true;
+                button.innerHTML = '<span class="loading"></span>Loading...';
+            } else {
+                button.disabled = false;
+                button.innerHTML = button.getAttribute('data-original-text') || button.textContent;
+            }
+        }
+
+        function showProgress() {
+            progressContainer.style.display = 'block';
+            progressBar.style.width = '0%';
+            progressText.textContent = 'Initializing...';
+            progressDetails.textContent = '';
+        }
+
+        function hideProgress() {
+            progressContainer.style.display = 'none';
+        }
+
+        function updateProgress(progress) {
+            const stage = progress.stage;
+            const current = progress.current || 0;
+            const total = progress.total || 1;
+            const message = progress.message || '';
+            
+            let percentage = 0;
+            if (stage === 'initializing') {
+                percentage = 5;
+            } else if (stage === 'downloading' && total > 0) {
+                // Downloading: 5% - 70%
+                percentage = 5 + Math.round((current / total) * 65);
+            } else if (stage === 'zipping' && total > 0) {
+                // Zipping: 70% - 95%
+                percentage = 70 + Math.round((current / total) * 25);
+            } else if (stage === 'ready') {
+                percentage = 100;
+            }
+            
+            progressBar.style.width = percentage + '%';
+            progressText.textContent = message;
+            
+            if (stage === 'downloading' && total > 0) {
+                progressDetails.textContent = `${current} / ${total} files (${percentage}%)`;
+            } else if (stage === 'zipping' && total > 0) {
+                progressDetails.textContent = `${current} / ${total} files (${percentage}%)`;
+            } else if (stage === 'ready') {
+                progressDetails.textContent = 'Complete!';
+            } else {
+                progressDetails.textContent = '';
+            }
+        }
+
+        function startProgressTracking(deviceId) {
+            // Close existing connection if any
+            if (progressEventSource) {
+                progressEventSource.close();
+            }
+            
+            // Start SSE connection
+            progressEventSource = new EventSource(`/api/progress/${deviceId}`);
+            
+            progressEventSource.onmessage = function(event) {
+                try {
+                    const progress = JSON.parse(event.data);
+                    updateProgress(progress);
+                    
+                    // If ready, close connection
+                    if (progress.stage === 'ready') {
+                        progressEventSource.close();
+                        progressEventSource = null;
+                    }
+                } catch (e) {
+                    console.error('Error parsing progress:', e);
+                }
+            };
+            
+            progressEventSource.onerror = function(event) {
+                console.error('SSE error:', event);
+                progressEventSource.close();
+                progressEventSource = null;
+            };
+        }
+
+        function stopProgressTracking() {
+            if (progressEventSource) {
+                progressEventSource.close();
+                progressEventSource = null;
+            }
+        }
+
+        async function checkDevice() {
+            const deviceId = deviceIdInput.value.trim();
+            if (!deviceId) {
+                showMessage('Please enter a device ID', 'error');
+                return;
+            }
+
+            hideMessage();
+            setLoading(checkBtn, true);
+            checkBtn.setAttribute('data-original-text', 'Check');
+
+            try {
+                const response = await fetch('/api/check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ device_id: deviceId })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.exists) {
+                        showMessage(
+                            `✓ Results found! ${data.file_count} file(s) available for download.`,
+                            'success'
+                        );
+                    } else {
+                        showMessage(
+                            `✗ No results found for device ID: ${deviceId}`,
+                            'error'
+                        );
+                    }
+                } else {
+                    showMessage(`Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`Network error: ${error.message}`, 'error');
+            } finally {
+                setLoading(checkBtn, false);
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const deviceId = deviceIdInput.value.trim();
+            if (!deviceId) {
+                showMessage('Please enter a device ID', 'error');
+                return;
+            }
+
+            hideMessage();
+            setLoading(downloadBtn, true);
+            downloadBtn.setAttribute('data-original-text', 'Download');
+            showProgress();
+            startProgressTracking(deviceId);
+
+            try {
+                const response = await fetch('/api/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ device_id: deviceId })
+                });
+
+                if (response.ok && response.headers.get('content-type')?.includes('application/zip')) {
+                    // Download successful - browser will handle the file download
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${deviceId}_results.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                    
+                    // Update progress to 100%
+                    updateProgress({
+                        stage: 'ready',
+                        current: 100,
+                        total: 100,
+                        message: 'Download complete!'
+                    });
+                    
+                    setTimeout(() => {
+                        hideProgress();
+                        showMessage(`✓ Download completed for device: ${deviceId}`, 'success');
+                    }, 1000);
+                } else {
+                    // Error response
+                    const data = await response.json();
+                    hideProgress();
+                    stopProgressTracking();
+                    showMessage(`Error: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                hideProgress();
+                stopProgressTracking();
+                showMessage(`Network error: ${error.message}`, 'error');
+            } finally {
+                setLoading(downloadBtn, false);
+            }
+        });
+
+        // Allow Enter key to submit form
+        deviceIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html>
+
