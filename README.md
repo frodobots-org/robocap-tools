@@ -83,20 +83,16 @@ Organize your dataset directory as follows:
 
 The `data5` directory will contain multiple IMU database files for each IMU device (dev0, dev1, dev2), organized by segments:
 
-- **Old Format**: `IMUWriter_dev{N}_session{S}_segment{G}.db` (multiple segments per device)
-- **New Format**: `IMU0.db`, `IMU1.db`, `IMU2.db` (single file per device, or multiple if segmented)
+- Format: `IMUWriter_dev{N}_session{S}_segment{G}.db` (multiple segments per device, typically 10-15 segments)
 
 The system automatically merges all segment files for each IMU during calibration.
 
 ### Supported File Formats
 
-The system supports both old and new file naming formats:
+**data5 (IMU Intrinsic):**
+- IMU files: `IMUWriter_dev{N}_session{S}_segment{G}.db` (multiple segments per device)
 
-**Old Format:**
-- IMU files: `IMUWriter_dev{N}_session{S}_segment{G}.db`
-- Video files: `video_dev{N}_session{S}_segment{G}_{position}.mp4`
-
-**New Format:**
+**data6-data9 (Camera Calibration):**
 - IMU files: `IMU0.db`, `IMU1.db`, `IMU2.db`
 - Video files: `left-front.mp4`, `right-front.mp4`, `left-eye.mp4`, `right-eye.mp4`, `left.mp4`, `right.mp4`
 
@@ -188,13 +184,12 @@ Calibrates 3 IMUs (imu0: middle, imu1: right, imu2: left).
 - The system automatically merges all segment files for each IMU during processing
 
 ```shell
-python /robocap-scripts/calib_imus_intrinsic.py --device-id {device_id}
+python3 /robocap-scripts/calib_imus_intrinsic.py --device-id {device_id}
 ```
 
 **Data Structure for data5:**
-- Old format: Multiple segment files per device (e.g., `IMUWriter_dev0_session4_segment1.db` through `segment14.db`)
-- New format: Single file per device (e.g., `IMU0.db`, `IMU1.db`, `IMU2.db`) or multiple segments if needed
-- The system handles both formats automatically
+- Format: Multiple segment files per device (e.g., `IMUWriter_dev0_session4_segment1.db` through `segment14.db`)
+- Typically 10-15 segments per IMU device
 
 #### 2. Camera Intrinsic Calibration
 
@@ -202,16 +197,16 @@ Calibrate front, eye, left, or right cameras:
 
 ```shell
 # Front cameras (left + right)
-python /robocap-scripts/calib_cams_intrinsic.py front --device-id {device_id}
+python3 /robocap-scripts/calib_cams_intrinsic.py front --device-id {device_id}
 
 # Eye cameras (left + right)
-python /robocap-scripts/calib_cams_intrinsic.py eye --device-id {device_id}
+python3 /robocap-scripts/calib_cams_intrinsic.py eye --device-id {device_id}
 
 # Left camera
-python /robocap-scripts/calib_cams_intrinsic.py left --device-id {device_id}
+python3 /robocap-scripts/calib_cams_intrinsic.py left --device-id {device_id}
 
 # Right camera
-python /robocap-scripts/calib_cams_intrinsic.py right --device-id {device_id}
+python3 /robocap-scripts/calib_cams_intrinsic.py right --device-id {device_id}
 ```
 
 #### 3. Camera-IMU Extrinsic Calibration
@@ -220,16 +215,16 @@ Calibrate camera-IMU extrinsic parameters:
 
 ```shell
 # Front cameras with all 3 IMUs
-python /robocap-scripts/calib_cams_imu_extrinsic.py front --device-id {device_id}
+python3 /robocap-scripts/calib_cams_imu_extrinsic.py front --device-id {device_id}
 
 # Eye cameras with all 3 IMUs
-python /robocap-scripts/calib_cams_imu_extrinsic.py eye --device-id {device_id}
+python3 /robocap-scripts/calib_cams_imu_extrinsic.py eye --device-id {device_id}
 
 # Left camera with all 3 IMUs
-python /robocap-scripts/calib_cams_imu_extrinsic.py left --device-id {device_id}
+python3 /robocap-scripts/calib_cams_imu_extrinsic.py left --device-id {device_id}
 
 # Right camera with all 3 IMUs
-python /robocap-scripts/calib_cams_imu_extrinsic.py right --device-id {device_id}
+python3 /robocap-scripts/calib_cams_imu_extrinsic.py right --device-id {device_id}
 ```
 
 ### Batch Calibration
@@ -239,34 +234,34 @@ Automatically calibrate all devices with all calibration tasks:
 #### Auto-discover All Devices
 
 ```shell
-python /robocap-scripts/batch_calibration_manager.py
+python3 /robocap-scripts/batch_calibration_manager.py
 ```
 
 #### Specify Device IDs
 
 ```shell
-python /robocap-scripts/batch_calibration_manager.py \
+python3 /robocap-scripts/batch_calibration_manager.py \
   --device-ids faf2a598869ccfc8 device2 device3
 ```
 
 #### With Custom CSV Output
 
 ```shell
-python /robocap-scripts/batch_calibration_manager.py \
+python3 /robocap-scripts/batch_calibration_manager.py \
   --csv-file /tmp/calibration_results.csv
 ```
 
 #### With S3 Upload
 
 ```shell
-python /robocap-scripts/batch_calibration_manager.py \
+python3 /robocap-scripts/batch_calibration_manager.py \
   --s3-config /path/to/s3_config.json
 ```
 
 #### Complete Example
 
 ```shell
-python /robocap-scripts/batch_calibration_manager.py \
+python3 /robocap-scripts/batch_calibration_manager.py \
   --device-ids faf2a598869ccfc8 \
   --data-root /data \
   --scripts-dir /robocap-scripts \
@@ -380,7 +375,7 @@ All calibration scripts support the following common options:
 ## Notes
 
 - All code comments and documentation are in English
-- The system automatically handles both old and new file naming formats
+- data5 uses segment-based file format, while data6-data9 use simplified file names
 - Intermediate files (.log and .bag) are automatically cleaned up after calibration
 - Calibration results include reprojection errors for extrinsic calibrations
 - The system supports automatic device discovery from the data directory structure
