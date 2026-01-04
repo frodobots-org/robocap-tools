@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-S3上传器模块
-负责将标定结果文件上传到S3
+S3 uploader module
+Responsible for uploading calibration result files to S3
 """
 
 import os
@@ -10,14 +10,14 @@ import sys
 from typing import List, Optional
 from pathlib import Path
 
-# 添加s3sdk到路径
+# Add s3sdk to path
 project_root = Path(__file__).parent.parent
 s3sdk_path = project_root / "s3sdk"
 if str(s3sdk_path) not in sys.path:
     sys.path.insert(0, str(s3sdk_path))
 
 try:
-    # 尝试从s3sdk目录导入
+    # Try to import from s3sdk directory
     s3sdk_sys_path = str(s3sdk_path)
     if s3sdk_sys_path not in sys.path:
         sys.path.insert(0, s3sdk_sys_path)
@@ -32,14 +32,14 @@ except ImportError as e:
 
 
 class S3Uploader:
-    """S3上传器 - 上传标定结果文件到S3"""
+    """S3 uploader - upload calibration result files to S3"""
     
     def __init__(self, s3_config_file: Optional[str] = None):
         """
-        初始化S3上传器
+        Initialize S3 uploader
         
         Args:
-            s3_config_file: S3配置文件路径（可选，默认使用s3sdk/s3_config.json）
+            s3_config_file: S3 configuration file path (optional, default uses s3sdk/s3_config.json)
         """
         self.s3_sdk = None
         
@@ -49,7 +49,7 @@ class S3Uploader:
         
         try:
             if s3_config_file is None:
-                # 默认配置文件路径
+                # Default configuration file path
                 default_config = project_root / "s3sdk" / "s3_config.json"
                 if default_config.exists():
                     s3_config_file = str(default_config)
@@ -72,16 +72,16 @@ class S3Uploader:
         filename: Optional[str] = None
     ) -> bool:
         """
-        上传标定结果文件到S3
+        Upload calibration result file to S3
         
         Args:
-            local_file_path: 本地文件路径
-            device_id: 设备ID
-            task_type: 任务类型（用于确定S3路径）
-            filename: S3中的文件名（可选，默认使用本地文件名）
+            local_file_path: Local file path
+            device_id: Device ID
+            task_type: Task type (used to determine S3 path)
+            filename: Filename in S3 (optional, default uses local filename)
             
         Returns:
-            是否上传成功
+            Whether upload was successful
         """
         if self.s3_sdk is None:
             print("S3 SDK not available, skipping upload")
@@ -91,38 +91,38 @@ class S3Uploader:
             print(f"File not found: {local_file_path}")
             return False
         
-        # 构建S3路径
+        # Build S3 path
         if filename is None:
             filename = os.path.basename(local_file_path)
         
-        # 根据任务类型确定S3路径
+        # Determine S3 path based on task type
         s3_folder = self._get_s3_folder(device_id, task_type)
         s3_path = f"{s3_folder}/{filename}"
         
         try:
-            print(f"[上传] {local_file_path} -> s3://{self.s3_sdk.config.bucket_name}/{s3_path}")
+            print(f"[Upload] {local_file_path} -> s3://{self.s3_sdk.config.bucket_name}/{s3_path}")
             success = self.s3_sdk.upload_file(local_file_path, s3_path)
             if success:
-                print(f"[成功] 上传完成: {s3_path}")
+                print(f"[Success] Upload completed: {s3_path}")
             else:
-                print(f"[失败] 上传失败: {s3_path}")
+                print(f"[Failed] Upload failed: {s3_path}")
             return success
         except Exception as e:
-            print(f"[错误] 上传异常: {e}")
+            print(f"[Error] Upload exception: {e}")
             return False
     
     def _get_s3_folder(self, device_id: str, task_type: str) -> str:
         """
-        根据任务类型获取S3文件夹路径
+        Get S3 folder path based on task type
         
         Args:
-            device_id: 设备ID
-            task_type: 任务类型
+            device_id: Device ID
+            task_type: Task type
             
         Returns:
-            S3文件夹路径
+            S3 folder path
         """
-        # 任务类型到S3路径的映射
+        # Mapping from task type to S3 path
         type_to_folder = {
             "imu_intrinsic": f"{device_id}/v1/results/imus_intrinsic",
             "cam_lr_front_intrinsic": f"{device_id}/v1/results/imus_cam_lr_front_extrinsic",
@@ -144,15 +144,15 @@ class S3Uploader:
         task_type: str
     ) -> List[bool]:
         """
-        批量上传文件
+        Batch upload files
         
         Args:
-            file_paths: 本地文件路径列表
-            device_id: 设备ID
-            task_type: 任务类型
+            file_paths: List of local file paths
+            device_id: Device ID
+            task_type: Task type
             
         Returns:
-            每个文件的上传结果列表
+            List of upload results for each file
         """
         results = []
         for file_path in file_paths:

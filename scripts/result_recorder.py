@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-结果记录器模块
-负责将标定结果记录到CSV文件
+Result recorder module
+Responsible for recording calibration results to CSV file
 """
 
 import os
@@ -16,7 +16,7 @@ from extrinsic_result_parser import get_extrinsic_reprojection_errors
 
 
 class ResultRecorder:
-    """结果记录器 - 将标定结果记录到CSV文件"""
+    """Result recorder - record calibration results to CSV file"""
     
     CSV_HEADERS = [
         "device_id",
@@ -40,23 +40,23 @@ class ResultRecorder:
     
     def __init__(self, csv_file_path: str):
         """
-        初始化结果记录器
+        Initialize result recorder
         
         Args:
-            csv_file_path: CSV文件路径
+            csv_file_path: CSV file path
         """
         self.csv_file_path = csv_file_path
         self._ensure_csv_exists()
     
     def _ensure_csv_exists(self):
-        """确保CSV文件存在，如果不存在则创建并写入表头"""
+        """Ensure CSV file exists, create and write header if it doesn't exist"""
         if not os.path.exists(self.csv_file_path):
-            # 确保目录存在
+            # Ensure directory exists
             csv_dir = os.path.dirname(self.csv_file_path)
             if csv_dir:
                 os.makedirs(csv_dir, exist_ok=True)
             
-            # 创建CSV文件并写入表头
+            # Create CSV file and write header
             with open(self.csv_file_path, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
                 writer.writerow(self.CSV_HEADERS)
@@ -68,36 +68,36 @@ class ResultRecorder:
         reprojection_errors: Optional[Dict[CalibrationTaskType, Dict[str, float]]] = None
     ) -> None:
         """
-        记录设备的所有标定结果
+        Record all calibration results for a device
         
         Args:
-            device_id: 设备ID
-            results: 任务类型到成功状态的映射
-            reprojection_errors: 外参标定任务的reprojection error值
-                                 格式: {task_type: {'cam0': value, 'cam1': value}}
+            device_id: Device ID
+            results: Mapping from task type to success status
+            reprojection_errors: Reprojection error values for extrinsic calibration tasks
+                                 Format: {task_type: {'cam0': value, 'cam1': value}}
         """
-        # 读取现有数据
+        # Read existing data
         existing_data = self._read_existing_data()
         
-        # 检查是否已存在该设备记录
+        # Check if device record already exists
         device_index = None
         for i, row in enumerate(existing_data):
             if len(row) > 0 and row[0] == device_id:
                 device_index = i
                 break
         
-        # 构建新行数据
+        # Build new row data
         new_row = [device_id, datetime.now().strftime('%Y-%m-%d %H:%M:%S')]
         
-        # 按顺序添加每个任务的结果
+        # Add results for each task in order
         task_types = get_all_task_types()
         for task_type in task_types:
             success = results.get(task_type, False)
-            new_row.append("成功" if success else "失败")
+            new_row.append("Success" if success else "Failed")
             
-            # 如果是外参标定任务，添加reprojection error值
+            # If it's an extrinsic calibration task, add reprojection error values
             if task_type == CalibrationTaskType.CAM_LR_FRONT_EXTRINSIC:
-                # 双摄像头任务：记录cam0和cam1
+                # Dual camera task: record cam0 and cam1
                 errors = {}
                 if reprojection_errors and task_type in reprojection_errors:
                     errors = reprojection_errors[task_type]
@@ -106,7 +106,7 @@ class ResultRecorder:
                 new_row.append(f"{cam0_error:.6f}" if cam0_error else "")
                 new_row.append(f"{cam1_error:.6f}" if cam1_error else "")
             elif task_type == CalibrationTaskType.CAM_LR_EYE_EXTRINSIC:
-                # 双摄像头任务：记录cam0和cam1
+                # Dual camera task: record cam0 and cam1
                 errors = {}
                 if reprojection_errors and task_type in reprojection_errors:
                     errors = reprojection_errors[task_type]
@@ -115,38 +115,38 @@ class ResultRecorder:
                 new_row.append(f"{cam0_error:.6f}" if cam0_error else "")
                 new_row.append(f"{cam1_error:.6f}" if cam1_error else "")
             elif task_type == CalibrationTaskType.CAM_L_EXTRINSIC:
-                # 单摄像头任务：只记录cam0
+                # Single camera task: only record cam0
                 errors = {}
                 if reprojection_errors and task_type in reprojection_errors:
                     errors = reprojection_errors[task_type]
                 cam0_error = errors.get('cam0', '')
                 new_row.append(f"{cam0_error:.6f}" if cam0_error else "")
             elif task_type == CalibrationTaskType.CAM_R_EXTRINSIC:
-                # 单摄像头任务：只记录cam0
+                # Single camera task: only record cam0
                 errors = {}
                 if reprojection_errors and task_type in reprojection_errors:
                     errors = reprojection_errors[task_type]
                 cam0_error = errors.get('cam0', '')
                 new_row.append(f"{cam0_error:.6f}" if cam0_error else "")
         
-        # 更新或添加记录
+        # Update or add record
         if device_index is not None:
             existing_data[device_index] = new_row
         else:
             existing_data.append(new_row)
         
-        # 写回CSV文件
+        # Write back to CSV file
         self._write_data(existing_data)
     
     def _read_existing_data(self) -> list:
-        """读取现有CSV数据"""
+        """Read existing CSV data"""
         if not os.path.exists(self.csv_file_path):
             return []
         
         data = []
         with open(self.csv_file_path, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
-            # 跳过表头
+            # Skip header
             next(reader, None)
             for row in reader:
                 data.append(row)
@@ -154,7 +154,7 @@ class ResultRecorder:
         return data
     
     def _write_data(self, data: list):
-        """写入数据到CSV文件"""
+        """Write data to CSV file"""
         with open(self.csv_file_path, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow(self.CSV_HEADERS)
@@ -162,27 +162,27 @@ class ResultRecorder:
     
     def get_device_result(self, device_id: str) -> Optional[Dict[CalibrationTaskType, bool]]:
         """
-        获取设备的标定结果
+        Get calibration results for a device
         
         Args:
-            device_id: 设备ID
+            device_id: Device ID
             
         Returns:
-            任务类型到成功状态的映射，如果设备不存在则返回None
+            Mapping from task type to success status, or None if device doesn't exist
         """
         existing_data = self._read_existing_data()
         
         for row in existing_data:
             if len(row) > 0 and row[0] == device_id:
-                # 解析结果
+                # Parse results
                 results = {}
                 task_types = get_all_task_types()
                 
-                # 跳过device_id和timestamp（前2列）
+                # Skip device_id and timestamp (first 2 columns)
                 for i, task_type in enumerate(task_types):
                     if i + 2 < len(row):
                         status_str = row[i + 2]
-                        results[task_type] = (status_str == "成功")
+                        results[task_type] = (status_str == "Success")
                 
                 return results
         

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Kalibr执行器
-统一封装kalibr标定命令执行逻辑
+Kalibr executor
+Unified encapsulation of kalibr calibration command execution logic
 """
 
 import os
@@ -10,7 +10,7 @@ import sys
 import time
 from typing import List, Optional
 
-# 添加脚本目录到路径
+# Add script directory to path
 script_dir = os.path.dirname(os.path.abspath(__file__))
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
@@ -24,10 +24,10 @@ from calibration_common import CommandExecutor, CalibrationLogger
 
 
 class KalibrExecutor:
-    """Kalibr执行器 - 统一封装kalibr标定命令执行"""
+    """Kalibr executor - unified encapsulation of kalibr calibration command execution"""
     
     def __init__(self):
-        """初始化Kalibr执行器"""
+        """Initialize Kalibr executor"""
         self.target_file = robocap_env.TARGET_FILE if robocap_env else None
         self.setup_file = robocap_env.KALIBR_SETUP_FILE if robocap_env else None
     
@@ -38,15 +38,15 @@ class KalibrExecutor:
         timeout: int = 1800
     ) -> bool:
         """
-        运行kalibr相机内参标定
+        Run kalibr camera intrinsic calibration
         
         Args:
-            rosbag_path: rosbag文件路径
-            camera_topics: 相机topic列表
-            timeout: 超时时间（秒，默认1800）
+            rosbag_path: rosbag file path
+            camera_topics: Camera topic list
+            timeout: Timeout in seconds (default 1800)
             
         Returns:
-            是否成功
+            Whether successful
         """
         CalibrationLogger.step(2, "Running kalibr camera intrinsic calibration...")
         CalibrationLogger.info(f"Rosbag: {rosbag_path}")
@@ -59,11 +59,11 @@ class KalibrExecutor:
             CalibrationLogger.error("No camera topics found in rosbag")
             return False
         
-        # 验证文件存在
+        # Verify files exist
         if not self._verify_files(rosbag_path, check_camchain=False):
             return False
         
-        # 构建kalibr命令
+        # Build kalibr command
         models = ['pinhole-equi'] * len(camera_topics)
         kalibr_cmd = [
             'rosrun kalibr kalibr_calibrate_cameras',
@@ -85,24 +85,24 @@ class KalibrExecutor:
         timeout: int = 3600
     ) -> bool:
         """
-        运行kalibr相机-IMU外参标定
+        Run kalibr camera-IMU extrinsic calibration
         
         Args:
-            rosbag_path: rosbag文件路径
-            camchain_file: camchain文件路径
-            imu_yaml_files: IMU YAML文件列表
-            imu_models: IMU模型列表（可选，默认使用'calibrated'）
-            timeout: 超时时间（秒，默认3600）
+            rosbag_path: rosbag file path
+            camchain_file: camchain file path
+            imu_yaml_files: IMU YAML file list
+            imu_models: IMU model list (optional, default uses 'calibrated')
+            timeout: Timeout in seconds (default 3600)
             
         Returns:
-            是否成功
+            Whether successful
         """
         CalibrationLogger.step(2, "Running kalibr IMU-camera extrinsic calibration...")
         CalibrationLogger.info(f"Rosbag: {rosbag_path}")
         CalibrationLogger.info(f"Camchain file: {camchain_file}")
         CalibrationLogger.info(f"IMU YAML files: {imu_yaml_files}")
         
-        # 确定IMU模型
+        # Determine IMU models
         if imu_models:
             final_imu_models = imu_models
         else:
@@ -113,15 +113,15 @@ class KalibrExecutor:
         CalibrationLogger.info(f"Bag time range: 5-65 seconds")
         CalibrationLogger.info(f"Timeout: {timeout} seconds")
         
-        # 验证文件存在
+        # Verify files exist
         if not self._verify_files(rosbag_path, camchain_file=camchain_file):
             return False
         
-        # 验证IMU YAML文件
+        # Verify IMU YAML files
         if not self._verify_imu_files(imu_yaml_files):
             return False
         
-        # 构建kalibr命令
+        # Build kalibr command
         kalibr_cmd = [
             'rosrun kalibr kalibr_calibrate_imu_camera',
             '--perform-synchronization',
@@ -144,7 +144,7 @@ class KalibrExecutor:
         camchain_file: Optional[str] = None,
         check_camchain: bool = True
     ) -> bool:
-        """验证必需文件是否存在"""
+        """Verify if required files exist"""
         if not os.path.exists(rosbag_path):
             CalibrationLogger.error(f"Rosbag file not found: {rosbag_path}")
             return False
@@ -166,7 +166,7 @@ class KalibrExecutor:
         return True
     
     def _verify_imu_files(self, imu_yaml_files: List[str]) -> bool:
-        """验证IMU YAML文件是否存在"""
+        """Verify if IMU YAML files exist"""
         CalibrationLogger.section("Verifying IMU YAML files...")
         
         all_exist = True
@@ -184,7 +184,7 @@ class KalibrExecutor:
         return True
     
     def _execute_kalibr_command(self, kalibr_cmd: List[str], timeout: int) -> bool:
-        """执行kalibr命令（实时输出日志）"""
+        """Execute kalibr command (real-time log output)"""
         import subprocess
         import threading
         import sys
@@ -197,11 +197,11 @@ class KalibrExecutor:
         CalibrationLogger.info(f"\nRunning command: {env_cmd}")
         CalibrationLogger.info("-" * 80)
         
-        # 执行命令（实时输出）
+        # Execute command (real-time output)
         cmd = ['/bin/bash', '-c', env_cmd]
         start_time = time.time()
         
-        # 使用Popen实时输出
+        # Use Popen for real-time output
         process = subprocess.Popen(
             cmd,
             stdout=subprocess.PIPE,
@@ -211,25 +211,25 @@ class KalibrExecutor:
             universal_newlines=True
         )
         
-        # 实时读取并输出日志
+        # Read and output logs in real-time
         stdout_lines = []
         
         def read_output():
-            """读取进程输出的线程函数"""
+            """Thread function to read process output"""
             try:
                 for line in process.stdout:
                     line = line.rstrip()
-                    print(line)  # 实时输出到终端
+                    print(line)  # Real-time output to terminal
                     stdout_lines.append(line)
-                    sys.stdout.flush()  # 确保立即输出
+                    sys.stdout.flush()  # Ensure immediate output
             except Exception:
                 pass
         
-        # 启动读取输出的线程
+        # Start thread to read output
         output_thread = threading.Thread(target=read_output, daemon=True)
         output_thread.start()
         
-        # 等待进程完成或超时
+        # Wait for process to complete or timeout
         try:
             returncode = process.wait(timeout=timeout)
         except subprocess.TimeoutExpired:
@@ -241,7 +241,7 @@ class KalibrExecutor:
             CalibrationLogger.error(f"Kalibr calibration timed out after {timeout} seconds")
             return False
         
-        # 等待输出线程完成
+        # Wait for output thread to complete
         output_thread.join(timeout=1)
         
         elapsed_time = time.time() - start_time

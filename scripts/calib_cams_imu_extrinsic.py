@@ -121,7 +121,7 @@ Examples:
         config.input_dir,
         config.output_rosbag,
         imu_src_rate=args.imu_rate,
-        video_rate=None  # 外参标定使用原始帧率
+        video_rate=None  # Extrinsic calibration uses original frame rate
     ):
         CalibrationLogger.error("Failed to create rosbag. Aborting.")
         return 1

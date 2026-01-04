@@ -40,12 +40,12 @@ CAMERA_TIMESTAMP_OFFSET_NS = 0
 
 
 # ============================================================================
-# 数据类 (Data Classes)
+# Data Classes
 # ============================================================================
 
 @dataclass
 class IMUFileInfo:
-    """IMU文件信息"""
+    """IMU file information"""
     path: str
     device_number: int
     segment_number: Optional[int]
@@ -54,7 +54,7 @@ class IMUFileInfo:
 
 @dataclass
 class VideoFileInfo:
-    """视频文件信息"""
+    """Video file information"""
     path: str
     device_number: int
     position: str
@@ -63,7 +63,7 @@ class VideoFileInfo:
 
 @dataclass
 class RosbagConfig:
-    """Rosbag创建配置"""
+    """Rosbag creation configuration"""
     input_dir: str
     output_bag: Optional[str] = None
     imu_src_rate: int = 200
@@ -75,7 +75,7 @@ class RosbagConfig:
     log_dir: Optional[str] = None
     
     def __post_init__(self):
-        """自动推断缺失的参数"""
+        """Automatically infer missing parameters"""
         if self.output_bag is None:
             self.output_bag = os.path.join(self.input_dir, "output.bag")
         if self.log_dir is None:
@@ -83,18 +83,18 @@ class RosbagConfig:
 
 
 # ============================================================================
-# 工具类 (Utility Classes)
+# Utility Classes
 # ============================================================================
 
 class FileFinder:
-    """文件查找器 - 查找和识别IMU数据库文件和视频文件"""
+    """File finder - find and identify IMU database files and video files"""
     
     def __init__(self, input_dir: str):
         """
-        初始化文件查找器
+        Initialize file finder
         
         Args:
-            input_dir: 输入目录路径
+            input_dir: Input directory path
         """
         self.input_dir = input_dir
         if not os.path.isdir(input_dir):
@@ -102,14 +102,14 @@ class FileFinder:
     
     def find_imu_files(self) -> List[str]:
         """
-        查找IMU数据库文件（支持新旧两种格式）
+        Find IMU database files (supports both old and new formats)
         
         Returns:
-            IMU数据库文件路径列表（已排序）
+            Sorted list of IMU database file paths
         """
         db_files = []
         
-        # 新格式: IMU0.db, IMU1.db, IMU2.db
+        # New format: IMU0.db, IMU1.db, IMU2.db
         new_format_db = []
         for i in range(10):
             new_format_db.extend(glob.glob(os.path.join(self.input_dir, f'IMU{i}.db')))
@@ -119,7 +119,7 @@ class FileFinder:
         if new_format_db:
             db_files = sorted(set(new_format_db))
         else:
-            # 旧格式: IMUWriter_dev*.db
+            # Old format: IMUWriter_dev*.db
             db_files = sorted(glob.glob(os.path.join(self.input_dir, 'IMUWriter_dev*.db')))
             if not db_files:
                 db_files = sorted(glob.glob(os.path.join(self.input_dir, 'imuwriter_dev*.db')))
@@ -130,19 +130,19 @@ class FileFinder:
     
     def find_video_files(self) -> List[str]:
         """
-        查找视频文件（支持新旧两种格式）
+        Find video files (supports both old and new formats)
         
         Returns:
-            视频文件路径列表（已排序）
+            Sorted list of video file paths
         """
-        # 新格式: left-front.mp4, right-front.mp4, left-eye.mp4, right-eye.mp4, left.mp4, right.mp4
+        # New format: left-front.mp4, right-front.mp4, left-eye.mp4, right-eye.mp4, left.mp4, right.mp4
         new_format_video = sorted(glob.glob(os.path.join(self.input_dir, 'left*.mp4')))
         new_format_video.extend(sorted(glob.glob(os.path.join(self.input_dir, 'right*.mp4'))))
         
         if new_format_video:
             return sorted(set(new_format_video))
         
-        # 旧格式: video_dev*.mp4
+        # Old format: video_dev*.mp4
         video_files = sorted(glob.glob(os.path.join(self.input_dir, 'video_dev*.mp4')))
         if not video_files:
             video_files = sorted(glob.glob(os.path.join(self.input_dir, 'VIDEO_DEV*.mp4')))
@@ -153,10 +153,10 @@ class FileFinder:
     
     def group_imu_files_by_device(self) -> Dict[int, List[str]]:
         """
-        按设备号分组IMU文件
+        Group IMU files by device number
         
         Returns:
-            {设备号: [文件路径列表]} 字典，文件已按segment排序
+            Dictionary mapping device numbers to sorted file path lists (sorted by segment)
         """
         db_files = self.find_imu_files()
         grouped: Dict[int, List[Tuple[int, str]]] = {}
@@ -175,7 +175,7 @@ class FileFinder:
                 grouped[dev_number] = []
             grouped[dev_number].append((segment_number, db_file))
         
-        # 按segment排序
+        # Sort by segment
         result: Dict[int, List[str]] = {}
         for dev_number, file_list in grouped.items():
             file_list.sort(key=lambda x: x[0])
@@ -185,26 +185,26 @@ class FileFinder:
 
 
 class FileParser:
-    """文件解析器 - 从文件名提取元数据"""
+    """File parser - extract metadata from filenames"""
     
     def __init__(self, robocap_env_module=None):
         """
-        初始化文件解析器
+        Initialize file parser
         
         Args:
-            robocap_env_module: robocap_env模块（可选，用于获取topic名称）
+            robocap_env_module: robocap_env module (optional, for getting topic names)
         """
         self.robocap_env = robocap_env_module
     
     @staticmethod
     def _get_imu_dev_number(db_file: str) -> Optional[int]:
-        """提取IMU设备号"""
+        """Extract IMU device number"""
         basename = os.path.basename(db_file)
-        # 新格式: IMU0.db, IMU1.db, IMU2.db
+        # New format: IMU0.db, IMU1.db, IMU2.db
         match = re.match(r'IMU(\d+)\.db$', basename, re.IGNORECASE)
         if match:
             return int(match.group(1))
-        # 旧格式: IMUWriter_dev0_session6_segment1
+        # Old format: IMUWriter_dev0_session6_segment1
         match = re.search(r'dev(\d+)', basename)
         if match:
             return int(match.group(1))
@@ -212,12 +212,12 @@ class FileParser:
     
     @staticmethod
     def _get_imu_segment_number(db_file: str) -> Optional[int]:
-        """提取IMU segment号"""
+        """Extract IMU segment number"""
         basename = os.path.basename(db_file)
-        # 新格式没有segment号
+        # New format has no segment number
         if re.match(r'IMU\d+\.db$', basename, re.IGNORECASE):
             return None
-        # 旧格式: 提取segment号
+        # Old format: extract segment number
         match = re.search(r'segment(\d+)', basename)
         if match:
             return int(match.group(1))
@@ -225,13 +225,13 @@ class FileParser:
     
     def parse_imu_file(self, file_path: str) -> Optional[IMUFileInfo]:
         """
-        解析IMU文件
+        Parse IMU file
         
         Args:
-            file_path: IMU数据库文件路径
+            file_path: IMU database file path
             
         Returns:
-            IMUFileInfo对象或None（解析失败）
+            IMUFileInfo object or None (if parsing fails)
         """
         device_number = self._get_imu_dev_number(file_path)
         if device_number is None:
@@ -249,22 +249,22 @@ class FileParser:
     
     def parse_video_file(self, file_path: str) -> Optional[VideoFileInfo]:
         """
-        解析视频文件
+        Parse video file
         
         Args:
-            file_path: 视频文件路径
+            file_path: Video file path
             
         Returns:
-            VideoFileInfo对象或None（解析失败）
+            VideoFileInfo object or None (if parsing fails)
         """
         basename = os.path.basename(file_path)
         name_without_ext = os.path.splitext(basename)[0]
         
-        # 旧格式: video_dev{N}_session{S}_segment{G}_{position}
+        # Old format: video_dev{N}_session{S}_segment{G}_{position}
         dev_match = re.search(r'video_dev(\d+)', basename)
         if dev_match:
             device_number = int(dev_match.group(1))
-            # 提取position
+            # Extract position
             parts = name_without_ext.split('_')
             dev_index = -1
             for i, part in enumerate(parts):
@@ -276,7 +276,7 @@ class FileParser:
             else:
                 position = 'unknown'
         else:
-            # 新格式: left-front.mp4, right-front.mp4等
+            # New format: left-front.mp4, right-front.mp4, etc.
             device_number = 0
             position = name_without_ext
         
@@ -291,18 +291,18 @@ class FileParser:
     
     def get_imu_topic_name(self, device_number: int) -> str:
         """
-        获取IMU topic名称
+        Get IMU topic name
         
         Args:
-            device_number: 设备号
+            device_number: Device number
             
         Returns:
-            ROS topic名称
+            ROS topic name
         """
         if self.robocap_env is not None:
             return self.robocap_env.get_imu_topic_name(device_number)
         else:
-            # 默认topic名称
+            # Default topic names
             if device_number == 0:
                 return '/imu_mid_0'
             elif device_number == 1:
@@ -314,14 +314,14 @@ class FileParser:
     
     def get_video_topic_name(self, device_number: int, position: str) -> str:
         """
-        获取视频topic名称
+        Get video topic name
         
         Args:
-            device_number: 设备号
-            position: 位置字符串
+            device_number: Device number
+            position: Position string
             
         Returns:
-            ROS topic名称
+            ROS topic name
         """
         if self.robocap_env is not None:
             return self.robocap_env.get_video_topic_name(device_number, position)
@@ -331,25 +331,25 @@ class FileParser:
 
 
 # ============================================================================
-# 处理器类 (Processor Classes)
+# Processor Classes
 # ============================================================================
 
 class IMUDataLoader:
-    """IMU数据加载器 - 从数据库文件加载IMU数据"""
+    """IMU data loader - load IMU data from database files"""
     
     def __init__(self):
-        """初始化IMU数据加载器"""
+        """Initialize IMU data loader"""
         pass
     
     def load_gyro_data(self, db_path: str) -> List[Tuple[int, int, int, int, int, int]]:
         """
-        加载陀螺仪数据
+        Load gyroscope data
         
         Args:
-            db_path: 数据库文件路径
+            db_path: Database file path
             
         Returns:
-            [(id, imuid_, x, y, z, timestamp), ...] 列表，按时间戳排序
+            List of [(id, imuid_, x, y, z, timestamp), ...], sorted by timestamp
         """
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
@@ -381,13 +381,13 @@ class IMUDataLoader:
     
     def load_acc_data(self, db_path: str) -> List[Tuple[int, int, int, int, int, int]]:
         """
-        加载加速度计数据
+        Load accelerometer data
         
         Args:
-            db_path: 数据库文件路径
+            db_path: Database file path
             
         Returns:
-            [(id, imuid_, x, y, z, timestamp), ...] 列表，按时间戳排序
+            List of [(id, imuid_, x, y, z, timestamp), ...], sorted by timestamp
         """
         conn = sqlite3.connect(db_path)
         conn.row_factory = sqlite3.Row
@@ -419,7 +419,7 @@ class IMUDataLoader:
 
 
 class IMUDataProcessor:
-    """IMU数据处理器 - 处理、合并、下采样IMU数据"""
+    """IMU data processor - process, merge, and downsample IMU data"""
     
     def __init__(
         self,
@@ -427,11 +427,11 @@ class IMUDataProcessor:
         acc_scale: float = IN_ACC_SCALES
     ):
         """
-        初始化IMU数据处理器
+        Initialize IMU data processor
         
         Args:
-            anglvel_scale: 角速度缩放因子
-            acc_scale: 加速度缩放因子
+            anglvel_scale: Angular velocity scaling factor
+            acc_scale: Acceleration scaling factor
         """
         self.anglvel_scale = anglvel_scale
         self.acc_scale = acc_scale
@@ -444,16 +444,16 @@ class IMUDataProcessor:
         start_index: int = 0
     ) -> Tuple[Optional[Tuple], int]:
         """
-        找到与gyro时间戳最匹配的acc数据
+        Find the best matching acc data for a gyro timestamp
         
         Args:
-            gyro_timestamp: 陀螺仪时间戳（纳秒）
-            acc_data: 加速度计数据列表
-            sample_interval_ns: 采样间隔（纳秒）
-            start_index: 起始搜索索引
+            gyro_timestamp: Gyroscope timestamp (nanoseconds)
+            acc_data: Accelerometer data list
+            sample_interval_ns: Sampling interval (nanoseconds)
+            start_index: Starting search index
             
         Returns:
-            (最佳匹配的acc数据, 下一个起始索引)
+            (Best matching acc data, next starting index)
         """
         if not acc_data or start_index >= len(acc_data):
             return None, start_index
@@ -464,7 +464,7 @@ class IMUDataProcessor:
         min_diff = None
         best_index = start_index
         
-        # 二分搜索
+        # Binary search
         while left <= right:
             mid = (left + right) // 2
             acc_timestamp = acc_data[mid][5]
@@ -480,7 +480,7 @@ class IMUDataProcessor:
             else:
                 right = mid - 1
         
-        # 检查最佳匹配周围的邻居
+        # Check neighbors around the best match
         search_range = min(10, len(acc_data))
         start_check = max(start_index, best_index - search_range // 2)
         end_check = min(len(acc_data), best_index + search_range // 2 + 1)
@@ -493,7 +493,7 @@ class IMUDataProcessor:
                 best_match = acc_data[i]
                 best_index = i
         
-        # 只有在采样间隔内才返回匹配
+        # Only return match if within sampling interval
         if best_match is not None and min_diff is not None and min_diff <= sample_interval_ns:
             next_index = max(0, best_index - 1)
             return best_match, next_index
@@ -507,12 +507,12 @@ class IMUDataProcessor:
         sampling_rate: int
     ) -> List[Tuple[int, float, float, float, float, float, float]]:
         """
-        合并陀螺仪和加速度计数据
+        Merge gyroscope and accelerometer data
         
         Args:
-            gyro_data: 陀螺仪数据列表
-            acc_data: 加速度计数据列表
-            sampling_rate: 采样率（Hz）
+            gyro_data: Gyroscope data list
+            acc_data: Accelerometer data list
+            sampling_rate: Sampling rate (Hz)
             
         Returns:
             [(timestamp_ns, omega_x, omega_y, omega_z, alpha_x, alpha_y, alpha_z), ...]
@@ -528,7 +528,7 @@ class IMUDataProcessor:
             gyro_timestamp = gyro[5]
             gyro_x, gyro_y, gyro_z = gyro[2], gyro[3], gyro[4]
             
-            # 找到最佳匹配的acc数据
+            # Find best matching acc data
             best_acc, next_index = self._find_best_match(
                 gyro_timestamp, acc_data, sample_interval_ns, acc_index
             )
@@ -536,7 +536,7 @@ class IMUDataProcessor:
             if best_acc:
                 acc_x, acc_y, acc_z = best_acc[2], best_acc[3], best_acc[4]
                 
-                # 应用缩放因子
+                # Apply scaling factors
                 omega_x = float(gyro_x) * self.anglvel_scale
                 omega_y = float(gyro_y) * self.anglvel_scale
                 omega_z = float(gyro_z) * self.anglvel_scale
@@ -560,15 +560,15 @@ class IMUDataProcessor:
         dst_rate: int
     ) -> List[Tuple]:
         """
-        下采样IMU数据
+        Downsample IMU data
         
         Args:
-            merged_data: 合并后的数据
-            src_rate: 源采样率（Hz）
-            dst_rate: 目标采样率（Hz）
+            merged_data: Merged data
+            src_rate: Source sampling rate (Hz)
+            dst_rate: Target sampling rate (Hz)
             
         Returns:
-            下采样后的数据列表
+            Downsampled data list
         """
         if dst_rate >= src_rate:
             print(f"Warning: Target sampling rate {dst_rate} >= source sampling rate {src_rate}, skipping downsampling")
@@ -597,20 +597,20 @@ class IMUDataProcessor:
         loader: IMUDataLoader
     ) -> Tuple[Optional[int], Optional[int]]:
         """
-        获取IMU文件的时间戳范围
+        Get timestamp range of IMU files
         
         Args:
-            db_files: 数据库文件路径列表
-            sampling_rate: 采样率（Hz）
-            loader: IMUDataLoader实例
+            db_files: Database file path list
+            sampling_rate: Sampling rate (Hz)
+            loader: IMUDataLoader instance
             
         Returns:
-            (min_timestamp_ns, max_timestamp_ns) 或 (None, None)
+            (min_timestamp_ns, max_timestamp_ns) or (None, None)
         """
         if not db_files:
             return None, None
         
-        # 加载并合并所有文件的数据
+        # Load and merge data from all files
         all_gyro_data = []
         all_acc_data = []
         
@@ -626,43 +626,43 @@ class IMUDataProcessor:
         if not all_gyro_data or not all_acc_data:
             return None, None
         
-        # 按时间戳排序
+        # Sort by timestamp
         all_gyro_data.sort(key=lambda x: x[5])
         all_acc_data.sort(key=lambda x: x[5])
         
-        # 合并数据
+        # Merge data
         merged_data = self.merge_data(all_gyro_data, all_acc_data, sampling_rate)
         
         if not merged_data:
             return None, None
         
-        # 返回最小和最大时间戳
+        # Return min and max timestamps
         timestamps = [row[0] for row in merged_data]
         return min(timestamps), max(timestamps)
 
 
 class VideoDataProcessor:
-    """视频数据处理器 - 处理视频文件"""
+    """Video data processor - process video files"""
     
     def __init__(self, timestamp_offset_ns: int = 0):
         """
-        初始化视频数据处理器
+        Initialize video data processor
         
         Args:
-            timestamp_offset_ns: 时间戳偏移量（纳秒）
+            timestamp_offset_ns: Timestamp offset (nanoseconds)
         """
         self.timestamp_offset_ns = timestamp_offset_ns
         self.bridge = CvBridge()
     
     def get_base_timestamp(self, video_file: str) -> Optional[int]:
         """
-        从MP4文件元数据获取基础时间戳
+        Get base timestamp from MP4 file metadata
         
         Args:
-            video_file: 视频文件路径
+            video_file: Video file path
             
         Returns:
-            基础时间戳（纳秒）或None
+            Base timestamp (nanoseconds) or None
         """
         try:
             cmd = [
@@ -693,13 +693,13 @@ class VideoDataProcessor:
     
     def get_time_base(self, video_file: str) -> Optional[Tuple[int, int]]:
         """
-        获取视频时间基准
+        Get video time base
         
         Args:
-            video_file: 视频文件路径
+            video_file: Video file path
             
         Returns:
-            (numerator, denominator) 或 None
+            (numerator, denominator) or None
         """
         try:
             cmd = [
@@ -724,13 +724,13 @@ class VideoDataProcessor:
     
     def get_all_frame_pts(self, video_file: str) -> List[int]:
         """
-        获取所有帧的PTS时间戳
+        Get all frame PTS timestamps
         
         Args:
-            video_file: 视频文件路径
+            video_file: Video file path
             
         Returns:
-            PTS时间戳列表
+            List of PTS timestamps
         """
         try:
             cmd = [
@@ -759,13 +759,13 @@ class VideoDataProcessor:
     
     def get_timestamp_range(self, video_file: str) -> Tuple[Optional[int], Optional[int]]:
         """
-        获取视频文件的时间戳范围
+        Get timestamp range of video file
         
         Args:
-            video_file: 视频文件路径
+            video_file: Video file path
             
         Returns:
-            (min_timestamp_ns, max_timestamp_ns) 或 (None, None)
+            (min_timestamp_ns, max_timestamp_ns) or (None, None)
         """
         base_timestamp_ns = self.get_base_timestamp(video_file)
         if base_timestamp_ns is None:
@@ -775,7 +775,7 @@ class VideoDataProcessor:
         frame_pts_list = self.get_all_frame_pts(video_file)
         
         if not frame_pts_list:
-            # 使用FPS估算
+            # Estimate using FPS
             cap = cv2.VideoCapture(video_file)
             if not cap.isOpened():
                 return None, None
@@ -792,7 +792,7 @@ class VideoDataProcessor:
             max_timestamp_ns = base_timestamp_ns + (frame_count_total - 1) * frame_interval_ns + self.timestamp_offset_ns
             return min_timestamp_ns, max_timestamp_ns
         
-        # 使用PTS计算
+        # Calculate using PTS
         if time_base is None:
             return None, None
         
@@ -819,16 +819,16 @@ class VideoDataProcessor:
         max_timestamp_ns: Optional[int] = None
     ) -> Generator[Tuple[np.ndarray, int, rospy.Time], None, None]:
         """
-        处理视频帧（生成器）
+        Process video frames (generator)
         
         Args:
-            video_file: 视频文件路径
-            target_fps: 目标帧率（None表示使用原始帧率）
-            min_timestamp_ns: 最小时间戳过滤
-            max_timestamp_ns: 最大时间戳过滤
+            video_file: Video file path
+            target_fps: Target frame rate (None means use original frame rate)
+            min_timestamp_ns: Minimum timestamp filter
+            max_timestamp_ns: Maximum timestamp filter
             
         Yields:
-            (frame, timestamp_ns, ros_timestamp) 元组
+            (frame, timestamp_ns, ros_timestamp) tuple
         """
         base_timestamp_ns = self.get_base_timestamp(video_file)
         if base_timestamp_ns is None:
@@ -860,12 +860,12 @@ class VideoDataProcessor:
             if not ret:
                 break
             
-            # 帧跳过逻辑
+            # Frame skip logic
             if frame_count % frame_skip != 0:
                 frame_count += 1
                 continue
             
-            # 计算时间戳
+            # Calculate timestamp
             if use_pts and frame_count < len(frame_pts_list):
                 pts = frame_pts_list[frame_count]
                 time_base_num, time_base_den = time_base
@@ -880,7 +880,7 @@ class VideoDataProcessor:
                 frame_interval_ns = int(1e9 / original_fps)
                 current_timestamp_ns = base_timestamp_ns + frame_count * frame_interval_ns + self.timestamp_offset_ns
             
-            # 时间戳过滤
+            # Timestamp filtering
             if min_timestamp_ns is not None and current_timestamp_ns < min_timestamp_ns:
                 frame_count += 1
                 continue
@@ -897,10 +897,10 @@ class VideoDataProcessor:
 
 
 class TimestampAligner:
-    """时间戳对齐器 - 对齐所有数据源的时间戳"""
+    """Timestamp aligner - align timestamps from all data sources"""
     
     def __init__(self):
-        """初始化时间戳对齐器"""
+        """Initialize timestamp aligner"""
         pass
     
     def scan_imu_timestamp_ranges(
@@ -911,16 +911,16 @@ class TimestampAligner:
         sampling_rate: int
     ) -> Dict[int, Tuple[Optional[int], Optional[int]]]:
         """
-        扫描IMU文件的时间戳范围
+        Scan timestamp ranges of IMU files
         
         Args:
-            imu_files_by_device: 按设备分组的IMU文件
-            imu_processor: IMU数据处理器实例
-            imu_loader: IMU数据加载器实例
-            sampling_rate: 采样率
+            imu_files_by_device: IMU files grouped by device
+            imu_processor: IMUDataProcessor instance
+            imu_loader: IMUDataLoader instance
+            sampling_rate: Sampling rate
             
         Returns:
-            {设备号: (min_ts, max_ts)} 字典
+            Dictionary mapping device numbers to (min_ts, max_ts)
         """
         ranges = {}
         for dev_number, db_files in imu_files_by_device.items():
@@ -934,14 +934,14 @@ class TimestampAligner:
         video_processor: VideoDataProcessor
     ) -> Dict[str, Tuple[Optional[int], Optional[int]]]:
         """
-        扫描视频文件的时间戳范围
+        Scan timestamp ranges of video files
         
         Args:
-            video_files: 视频文件路径列表
-            video_processor: 视频数据处理器实例
+            video_files: Video file path list
+            video_processor: VideoDataProcessor instance
             
         Returns:
-            {文件路径: (min_ts, max_ts)} 字典
+            Dictionary mapping file paths to (min_ts, max_ts)
         """
         ranges = {}
         for video_file in video_files:
@@ -954,13 +954,13 @@ class TimestampAligner:
         timestamp_ranges: List[Tuple[Optional[int], Optional[int]]]
     ) -> Tuple[Optional[int], Optional[int]]:
         """
-        计算对齐的时间戳范围
+        Calculate aligned timestamp range
         
         Args:
-            timestamp_ranges: 时间戳范围列表
+            timestamp_ranges: Timestamp range list
             
         Returns:
-            (aligned_min_ts, aligned_max_ts) 对齐后的时间范围
+            (aligned_min_ts, aligned_max_ts) aligned time range
         """
         valid_ranges = [r for r in timestamp_ranges if r[0] is not None and r[1] is not None]
         
@@ -970,9 +970,9 @@ class TimestampAligner:
         min_timestamps = [r[0] for r in valid_ranges]
         max_timestamps = [r[1] for r in valid_ranges]
         
-        # 最小时间戳：所有文件中最晚的开始时间
+        # Min timestamp: latest start time among all files
         aligned_min_ts = max(min_timestamps)
-        # 最大时间戳：所有文件中最早的结束时间
+        # Max timestamp: earliest end time among all files
         aligned_max_ts = min(max_timestamps)
         
         return aligned_min_ts, aligned_max_ts
@@ -984,15 +984,15 @@ class TimestampAligner:
         max_timestamp_ns: Optional[int]
     ) -> bool:
         """
-        检查时间戳是否在范围内
+        Check if timestamp is within range
         
         Args:
-            timestamp_ns: 要检查的时间戳
-            min_timestamp_ns: 最小时间戳
-            max_timestamp_ns: 最大时间戳
+            timestamp_ns: Timestamp to check
+            min_timestamp_ns: Minimum timestamp
+            max_timestamp_ns: Maximum timestamp
             
         Returns:
-            是否在范围内
+            Whether timestamp is within range
         """
         if min_timestamp_ns is not None and timestamp_ns < min_timestamp_ns:
             return False
@@ -1002,14 +1002,14 @@ class TimestampAligner:
 
 
 class LogWriter:
-    """日志写入器 - 写入处理日志"""
+    """Log writer - write processing logs"""
     
     def __init__(self, log_dir: str):
         """
-        初始化日志写入器
+        Initialize log writer
         
         Args:
-            log_dir: 日志文件输出目录
+            log_dir: Log file output directory
         """
         self.log_dir = log_dir
         os.makedirs(log_dir, exist_ok=True)
@@ -1023,17 +1023,17 @@ class LogWriter:
         stats: Dict[str, Any]
     ) -> str:
         """
-        写入IMU处理日志
+        Write IMU processing log
         
         Args:
-            file_info: IMU文件信息
-            db_files: 数据库文件路径列表
-            merged_data: 合并后的数据
-            config: 处理配置
-            stats: 统计信息字典
+            file_info: IMU file information
+            db_files: Database file path list
+            merged_data: Merged data
+            config: Processing configuration
+            stats: Statistics dictionary
             
         Returns:
-            日志文件路径
+            Log file path
         """
         if len(db_files) == 1:
             db_basename = os.path.basename(db_files[0])
@@ -1073,7 +1073,7 @@ class LogWriter:
             for row in merged_data:
                 timestamp_ns = row[0]
                 
-                # 时间戳过滤
+                # Timestamp filtering
                 if not TimestampAligner.is_in_range(timestamp_ns, config.min_timestamp_ns, config.max_timestamp_ns):
                     continue
                 
@@ -1098,16 +1098,16 @@ class LogWriter:
         stats: Dict[str, Any]
     ) -> str:
         """
-        写入视频处理日志
+        Write video processing log
         
         Args:
-            file_info: 视频文件信息
-            video_file: 视频文件路径
-            config: 处理配置
-            stats: 统计信息字典
+            file_info: Video file information
+            video_file: Video file path
+            config: Processing configuration
+            stats: Statistics dictionary
             
         Returns:
-            日志文件路径
+            Log file path
         """
         video_basename = os.path.basename(video_file)
         video_name_without_ext = os.path.splitext(video_basename)[0]
@@ -1124,38 +1124,38 @@ class LogWriter:
             log_file.write(f"{'Frame#':>10} {'Timestamp(ns)':>20} {'Timestamp(sec)':>25} {'ROS Timestamp':>25}\n")
             log_file.write("-"*80 + "\n")
             
-            # 这里只写头部，实际帧数据在process_video时写入
+            # Only write header here, actual frame data is written in process_video
             log_file.write("="*80 + "\n")
         
         return log_file_path
 
 
 class RosbagWriter:
-    """ROS Bag写入器 - 写入ROS bag文件"""
+    """ROS Bag writer - write ROS bag files"""
     
     def __init__(self, bag_path: str):
         """
-        初始化ROS Bag写入器
+        Initialize ROS Bag writer
         
         Args:
-            bag_path: rosbag文件路径
+            bag_path: rosbag file path
         """
         self.bag_path = bag_path
         self.bag = None
         self.topics = []
         
-        # 确保输出目录存在
+        # Ensure output directory exists
         output_dir = os.path.dirname(bag_path)
         if output_dir and not os.path.exists(output_dir):
             os.makedirs(output_dir, exist_ok=True)
     
     def __enter__(self):
-        """上下文管理器入口"""
+        """Context manager entry"""
         self.bag = rosbag.Bag(self.bag_path, 'w')
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
-        """上下文管理器出口"""
+        """Context manager exit"""
         if self.bag is not None:
             self.bag.close()
     
@@ -1172,14 +1172,14 @@ class RosbagWriter:
         frame_id: str
     ) -> None:
         """
-        写入IMU消息
+        Write IMU message
         
         Args:
-            topic_name: topic名称
-            timestamp: ROS时间戳
-            omega_x/y/z: 角速度
-            alpha_x/y/z: 加速度
-            frame_id: 坐标系ID
+            topic_name: Topic name
+            timestamp: ROS timestamp
+            omega_x/y/z: Angular velocity
+            alpha_x/y/z: Acceleration
+            frame_id: Frame ID
         """
         if self.bag is None:
             raise RuntimeError("Bag file is not open")
@@ -1208,13 +1208,13 @@ class RosbagWriter:
         frame_id: str
     ) -> None:
         """
-        写入图像消息
+        Write image message
         
         Args:
-            topic_name: topic名称
-            timestamp: ROS时间戳
-            frame: OpenCV图像帧
-            frame_id: 坐标系ID
+            topic_name: Topic name
+            timestamp: ROS timestamp
+            frame: OpenCV image frame
+            frame_id: Frame ID
         """
         if self.bag is None:
             raise RuntimeError("Bag file is not open")
@@ -1235,16 +1235,16 @@ class RosbagWriter:
     
     def get_topics(self) -> List[str]:
         """
-        获取所有已写入的topic
+        Get all written topics
         
         Returns:
-            topic名称列表
+            List of topic names
         """
         return self.topics.copy()
 
 
 # ============================================================================
-# 保留原有函数以保持兼容性（后续会逐步替换）
+# Keep original functions for compatibility (will be gradually replaced)
 # ============================================================================
 
 def get_mp4_base_timestamp(mp4_file: str) -> Optional[int]:

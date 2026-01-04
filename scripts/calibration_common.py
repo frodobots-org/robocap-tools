@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-标定公共工具模块
-提供所有标定脚本共用的工具函数和类
+Calibration common utilities module
+Provides common utility functions and classes for all calibration scripts
 """
 
 import os
@@ -13,7 +13,7 @@ import importlib.util
 from typing import List, Optional, Tuple, Union, Callable
 from dataclasses import dataclass
 
-# 添加脚本目录到路径
+# Add script directory to path
 script_dir = os.path.dirname(os.path.abspath(__file__))
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
@@ -35,7 +35,7 @@ except ImportError:
 
 @dataclass
 class CalibrationConfig:
-    """标定配置数据类"""
+    """Calibration configuration data class"""
     input_dir: str
     output_rosbag: str
     camchain_file: Optional[str] = None
@@ -43,7 +43,7 @@ class CalibrationConfig:
 
 
 class CommandExecutor:
-    """命令执行器 - 统一的命令执行接口"""
+    """Command executor - unified command execution interface"""
     
     @staticmethod
     def run(
@@ -56,16 +56,16 @@ class CommandExecutor:
         capture_output: bool = True
     ) -> Union[subprocess.Popen, Tuple[int, str, str], subprocess.CompletedProcess]:
         """
-        执行命令
+        Execute command
         
         Args:
-            cmd: 命令字符串或列表
-            shell: 是否使用shell
-            check: 是否检查返回码
-            background: 是否后台运行
-            timeout: 超时时间（秒）
-            cwd: 工作目录
-            capture_output: 是否捕获输出
+            cmd: Command string or list
+            shell: Whether to use shell
+            check: Whether to check return code
+            background: Whether to run in background
+            timeout: Timeout in seconds
+            cwd: Working directory
+            capture_output: Whether to capture output
             
         Returns:
             - background=True: subprocess.Popen
@@ -108,56 +108,56 @@ class CommandExecutor:
 
 
 class CalibrationLogger:
-    """标定日志记录器 - 统一的日志输出格式"""
+    """Calibration logger - unified log output format"""
     
     @staticmethod
     def step(step_num: int, description: str):
-        """输出步骤日志"""
+        """Output step log"""
         print("=" * 80)
         print(f"Step {step_num}: {description}")
         print("=" * 80)
     
     @staticmethod
     def info(message: str):
-        """输出信息日志"""
+        """Output info log"""
         print(message)
     
     @staticmethod
     def success(message: str):
-        """输出成功日志"""
+        """Output success log"""
         print(f"✓ {message}")
     
     @staticmethod
     def error(message: str):
-        """输出错误日志"""
+        """Output error log"""
         print(f"✗ {message}")
     
     @staticmethod
     def warning(message: str):
-        """输出警告日志"""
+        """Output warning log"""
         print(f"⚠ {message}")
     
     @staticmethod
     def section(title: str):
-        """输出章节标题"""
+        """Output section title"""
         print("\n" + "=" * 80)
         print(title)
         print("=" * 80)
 
 
 class ConfigHelper:
-    """配置助手 - 统一的配置获取"""
+    """Config helper - unified configuration retrieval"""
     
     @staticmethod
     def get_camera_intrinsic_config(mode: str) -> Optional[CalibrationConfig]:
         """
-        获取相机内参标定配置
+        Get camera intrinsic calibration configuration
         
         Args:
             mode: 'front', 'eye', 'left', 'right'
             
         Returns:
-            CalibrationConfig 或 None
+            CalibrationConfig or None
         """
         if robocap_env is None:
             return None
@@ -187,13 +187,13 @@ class ConfigHelper:
     @staticmethod
     def get_camera_extrinsic_config(mode: str) -> Optional[CalibrationConfig]:
         """
-        获取相机外参标定配置
+        Get camera extrinsic calibration configuration
         
         Args:
             mode: 'front', 'eye', 'left', 'right'
             
         Returns:
-            CalibrationConfig 或 None
+            CalibrationConfig or None
         """
         if robocap_env is None:
             return None
@@ -247,10 +247,10 @@ class ConfigHelper:
     @staticmethod
     def get_imu_intrinsic_config() -> Optional[CalibrationConfig]:
         """
-        获取IMU内参标定配置
+        Get IMU intrinsic calibration configuration
         
         Returns:
-            CalibrationConfig 或 None
+            CalibrationConfig or None
         """
         if robocap_env is None:
             return None
@@ -262,11 +262,11 @@ class ConfigHelper:
 
 
 class ArgumentParserHelper:
-    """参数解析助手 - 统一的参数解析"""
+    """Argument parser helper - unified argument parsing"""
     
     @staticmethod
     def add_common_args(parser: argparse.ArgumentParser):
-        """添加通用参数"""
+        """Add common arguments"""
         parser.add_argument(
             '--device-id',
             type=str,
@@ -283,13 +283,13 @@ class ArgumentParserHelper:
     @staticmethod
     def setup_device_id(args: argparse.Namespace) -> str:
         """
-        设置设备ID
+        Setup device ID
         
         Args:
-            args: 解析后的参数对象
+            args: Parsed arguments object
             
         Returns:
-            设备ID字符串
+            Device ID string
         """
         if args.device_id:
             if robocap_env:
@@ -306,13 +306,13 @@ class ArgumentParserHelper:
     @staticmethod
     def load_callback(callback_path: Optional[str]) -> Optional[Callable]:
         """
-        加载回调函数
+        Load callback function
         
         Args:
-            callback_path: 回调模块路径
+            callback_path: Callback module path
             
         Returns:
-            回调函数或None
+            Callback function or None
         """
         if not callback_path:
             return None
@@ -335,13 +335,13 @@ class ArgumentParserHelper:
     @staticmethod
     def create_result_handler(callback_func: Optional[Callable] = None) -> Optional[CalibrationResultHandler]:
         """
-        创建结果处理器
+        Create result handler
         
         Args:
-            callback_func: 回调函数
+            callback_func: Callback function
             
         Returns:
-            CalibrationResultHandler 或 None
+            CalibrationResultHandler or None
         """
         if CalibrationResultHandler is None:
             return None

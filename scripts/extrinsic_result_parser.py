@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-外参标定结果解析器
-解析Kalibr生成的结果文件，提取reprojection error等信息
+Extrinsic calibration result parser
+Parse Kalibr-generated result files, extract reprojection error and other information
 """
 
 import os
@@ -13,14 +13,14 @@ from pathlib import Path
 
 def parse_extrinsic_result_file(result_file_path: str) -> Dict[str, float]:
     """
-    解析外参标定结果文件，提取每个摄像头的reprojection error mean值
+    Parse extrinsic calibration result file, extract reprojection error mean value for each camera
     
     Args:
-        result_file_path: 结果文件路径（.txt文件）
+        result_file_path: Result file path (.txt file)
         
     Returns:
-        字典，键为摄像头名称（如'cam0', 'cam1'），值为reprojection error mean值
-        如果解析失败，返回空字典
+        Dictionary with camera names (e.g., 'cam0', 'cam1') as keys and reprojection error mean values as values
+        Returns empty dictionary if parsing fails
     """
     if not os.path.exists(result_file_path):
         return {}
@@ -31,8 +31,8 @@ def parse_extrinsic_result_file(result_file_path: str) -> Dict[str, float]:
         with open(result_file_path, 'r', encoding='utf-8') as f:
             content = f.read()
             
-        # 匹配格式：Reprojection error (cam0) [px]:     mean 0.6064611271920474, ...
-        # 或：Reprojection error (cam1) [px]:     mean 0.6047673621605816, ...
+        # Match format: Reprojection error (cam0) [px]:     mean 0.6064611271920474, ...
+        # or: Reprojection error (cam1) [px]:     mean 0.6047673621605816, ...
         pattern = r'Reprojection error\s+\(cam(\d+)\)\s+\[px\]:\s+mean\s+([\d.]+)'
         
         matches = re.findall(pattern, content)
@@ -53,21 +53,21 @@ def parse_extrinsic_result_file(result_file_path: str) -> Dict[str, float]:
 
 def find_extrinsic_result_file(output_dir: str, task_type: str) -> Optional[str]:
     """
-    查找外参标定结果文件
+    Find extrinsic calibration result file
     
     Args:
-        output_dir: 输出目录
-        task_type: 任务类型（如'cam_lr_front_extrinsic'）
+        output_dir: Output directory
+        task_type: Task type (e.g., 'cam_lr_front_extrinsic')
         
     Returns:
-        结果文件路径，如果未找到则返回None
+        Result file path, or None if not found
     """
     if not os.path.exists(output_dir):
         return None
     
     import glob
     
-    # 尝试多种文件名模式
+    # Try multiple filename patterns
     patterns = [
         f"*{task_type}*results*.txt",
         f"*results*.txt",
@@ -78,11 +78,11 @@ def find_extrinsic_result_file(output_dir: str, task_type: str) -> Optional[str]
     for pattern in patterns:
         files = glob.glob(os.path.join(output_dir, pattern))
         if files:
-            # 优先选择包含任务类型名称的文件
+            # Prefer files containing task type name
             for f in files:
                 if task_type in os.path.basename(f):
                     return f
-            # 如果没有找到包含任务类型的，返回第一个
+            # If none found containing task type, return the first one
             return files[0]
     
     return None
@@ -93,14 +93,14 @@ def get_extrinsic_reprojection_errors(
     task_type: str
 ) -> Dict[str, float]:
     """
-    获取外参标定的reprojection error值
+    Get reprojection error values for extrinsic calibration
     
     Args:
-        output_dir: 输出目录
-        task_type: 任务类型
+        output_dir: Output directory
+        task_type: Task type
         
     Returns:
-        字典，键为摄像头名称（如'cam0', 'cam1'），值为reprojection error mean值
+        Dictionary with camera names (e.g., 'cam0', 'cam1') as keys and reprojection error mean values as values
     """
     result_file = find_extrinsic_result_file(output_dir, task_type)
     

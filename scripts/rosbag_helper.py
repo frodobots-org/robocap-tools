@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Rosbag辅助工具
-提供rosbag相关的辅助功能
+Rosbag helper utilities
+Provides rosbag-related helper functions
 """
 
 import os
@@ -13,18 +13,18 @@ from calibration_common import CalibrationLogger
 
 
 class RosbagHelper:
-    """Rosbag辅助工具类"""
+    """Rosbag helper utility class"""
     
     @staticmethod
     def get_camera_topics(rosbag_path: str) -> List[str]:
         """
-        从rosbag中提取相机topic（以/image_raw结尾）
+        Extract camera topics from rosbag (ending with /image_raw)
         
         Args:
-            rosbag_path: rosbag文件路径
+            rosbag_path: rosbag file path
             
         Returns:
-            相机topic列表
+            List of camera topics
         """
         camera_topics = []
         
@@ -46,14 +46,14 @@ class RosbagHelper:
     @staticmethod
     def play_rosbag(bag_file: str, rate: float = 60.0) -> 'subprocess.Popen':
         """
-        播放rosbag（后台运行）
+        Play rosbag (run in background)
         
         Args:
-            bag_file: rosbag文件路径
-            rate: 播放速率（默认60x）
+            bag_file: rosbag file path
+            rate: Playback rate (default 60x)
             
         Returns:
-            subprocess.Popen对象
+            subprocess.Popen object
         """
         import subprocess
         
@@ -85,10 +85,10 @@ class RosbagHelper:
     @staticmethod
     def stop_rosbag(rosbag_process) -> None:
         """
-        完全停止rosbag播放进程
+        Completely stop rosbag playback process
         
         Args:
-            rosbag_process: subprocess.Popen对象
+            rosbag_process: subprocess.Popen object
         """
         if rosbag_process is None:
             return
@@ -100,7 +100,7 @@ class RosbagHelper:
             import time
             import subprocess
             
-            # 尝试终止进程组
+            # Try to terminate process group
             try:
                 if rosbag_process.poll() is None:
                     pgid = os.getpgid(rosbag_process.pid)
@@ -128,7 +128,7 @@ class RosbagHelper:
         except Exception as e:
             CalibrationLogger.warning(f"Error stopping rosbag process: {e}")
         
-        # 使用pkill清理所有rosbag进程
+        # Use pkill to clean up all rosbag processes
         try:
             CalibrationLogger.info("  Killing all remaining rosbag play processes...")
             subprocess.run(
@@ -141,7 +141,7 @@ class RosbagHelper:
         except Exception:
             pass
         
-        # 最终验证
+        # Final verification
         try:
             result = subprocess.run(
                 ["pgrep", "-f", "rosbag play"],

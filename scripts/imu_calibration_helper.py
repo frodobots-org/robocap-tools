@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-IMU标定辅助类
-封装IMU内参标定的特定逻辑
+IMU calibration helper class
+Encapsulates specific logic for IMU intrinsic calibration
 """
 
 import os
@@ -11,7 +11,7 @@ import subprocess
 import time
 from typing import Optional, Tuple
 
-# 添加脚本目录到路径
+# Add script directory to path
 script_dir = os.path.dirname(os.path.abspath(__file__))
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
@@ -26,23 +26,23 @@ from rosbag_helper import RosbagHelper
 
 
 class IMUCalibrationHelper:
-    """IMU标定辅助类 - 封装IMU内参标定的特定逻辑"""
+    """IMU calibration helper class - encapsulates specific logic for IMU intrinsic calibration"""
     
     def __init__(self):
-        """初始化IMU标定辅助类"""
+        """Initialize IMU calibration helper class"""
         self.setup_file = robocap_env.IMU_UTILS_SETUP_FILE if robocap_env else None
         self.data_dir = "/catkin_ws_imu/src/imu_utils/data"
     
     def run_roslaunch(self, imu_num: int, launch_file: str) -> Optional[subprocess.Popen]:
         """
-        运行roslaunch进程
+        Run roslaunch process
         
         Args:
-            imu_num: IMU编号（0, 1, 2）
-            launch_file: launch文件路径
+            imu_num: IMU number (0, 1, 2)
+            launch_file: Launch file path
             
         Returns:
-            subprocess.Popen对象或None
+            subprocess.Popen object or None
         """
         if not os.path.exists(launch_file):
             CalibrationLogger.warning(f"Launch file does not exist: {launch_file}")
@@ -72,15 +72,15 @@ class IMUCalibrationHelper:
     
     def wait_for_completion(self, process: subprocess.Popen, imu_num: int, timeout: int = 300) -> bool:
         """
-        等待roslaunch进程完成
+        Wait for roslaunch process to complete
         
         Args:
-            process: subprocess.Popen对象
-            imu_num: IMU编号
-            timeout: 超时时间（秒，默认300）
+            process: subprocess.Popen object
+            imu_num: IMU number
+            timeout: Timeout in seconds (default 300)
             
         Returns:
-            是否成功完成
+            Whether completed successfully
         """
         if process is None:
             return False
@@ -89,14 +89,14 @@ class IMUCalibrationHelper:
         CalibrationLogger.info(f"Timeout: {timeout} seconds")
         
         start_time = time.time()
-        time.sleep(3)  # 给进程一些启动时间
+        time.sleep(3)  # Give process some startup time
         
-        # 检查初始状态
+        # Check initial status
         CalibrationLogger.info("\nInitial process status:")
         status = "running" if process.poll() is None else f"exited (code: {process.returncode})"
         CalibrationLogger.info(f"  imu{imu_num} (PID: {process.pid}): {status}")
         
-        # 检查日志文件
+        # Check log file
         log_file = f"/tmp/roslaunch_imu{imu_num}.log"
         if os.path.exists(log_file):
             try:
@@ -114,7 +114,7 @@ class IMUCalibrationHelper:
             except Exception as e:
                 CalibrationLogger.warning(f"    Could not read log file: {e}")
         
-        # 等待进程完成
+        # Wait for process to complete
         while True:
             if process.poll() is not None:
                 return_code = process.returncode
@@ -151,19 +151,19 @@ class IMUCalibrationHelper:
     
     def extract_parameters(self, imu_num: int) -> Tuple[bool, Optional[str]]:
         """
-        提取IMU参数
+        Extract IMU parameters
         
         Args:
-            imu_num: IMU编号（0, 1, 2）
+            imu_num: IMU number (0, 1, 2)
             
         Returns:
-            (是否成功, 输出YAML文件路径)
+            (Whether successful, output YAML file path)
         """
         CalibrationLogger.section(f"Extracting IMU parameters for imu{imu_num}...")
         
         input_file = os.path.join(self.data_dir, f"imu{imu_num}_imu_param.yaml")
         
-        # 获取输出文件路径
+        # Get output file path
         if robocap_env:
             if imu_num == 0:
                 output_file = robocap_env.YAML_FILE_IMU_MID_0
@@ -178,16 +178,16 @@ class IMUCalibrationHelper:
             CalibrationLogger.error("robocap_env not available")
             return False, None
         
-        # 确保输出目录存在
+        # Ensure output directory exists
         output_dir = os.path.dirname(output_file)
         os.makedirs(output_dir, exist_ok=True)
         
-        # 检查输入文件
+        # Check input file
         if not os.path.exists(input_file):
             CalibrationLogger.error(f"Input file does not exist: {input_file}")
             return False, None
         
-        # 执行提取命令
+        # Execute extraction command
         extract_script = os.path.join(script_dir, "extract_imu_params.py")
         cmd = [
             sys.executable,
@@ -211,7 +211,7 @@ class IMUCalibrationHelper:
                     CalibrationLogger.error(f"Stderr: {stderr}")
                 return False, None
         
-        # 验证输出文件
+        # Verify output file
         if os.path.exists(output_file):
             CalibrationLogger.success(f"Output file created: {output_file}")
             return True, output_file
@@ -226,32 +226,32 @@ class IMUCalibrationHelper:
         bag_file: str
     ) -> Tuple[bool, Optional[str], Optional[str]]:
         """
-        处理单个IMU的完整流程
+        Process complete workflow for a single IMU
         
         Args:
-            imu_num: IMU编号
-            launch_file: launch文件路径
-            bag_file: rosbag文件路径
+            imu_num: IMU number
+            launch_file: Launch file path
+            bag_file: rosbag file path
             
         Returns:
-            (是否成功, YAML文件路径, 错误信息)
+            (Whether successful, YAML file path, error message)
         """
         CalibrationLogger.section(f"Processing IMU {imu_num}")
         
-        # 1. 播放rosbag
+        # 1. Play rosbag
         rosbag_process = RosbagHelper.play_rosbag(bag_file, rate=60.0)
         
-        # 2. 运行roslaunch
+        # 2. Run roslaunch
         roslaunch_process = self.run_roslaunch(imu_num, launch_file)
         
         if roslaunch_process is None:
             RosbagHelper.stop_rosbag(rosbag_process)
             return False, None, "Failed to start roslaunch process"
         
-        # 3. 等待完成
+        # 3. Wait for completion
         success = self.wait_for_completion(roslaunch_process, imu_num)
         
-        # 4. 停止rosbag
+        # 4. Stop rosbag
         RosbagHelper.stop_rosbag(rosbag_process)
         
         if not success:
@@ -260,7 +260,7 @@ class IMUCalibrationHelper:
             CalibrationLogger.info("Cannot proceed with parameter extraction.")
             return False, None, error_msg
         
-        # 5. 提取参数
+        # 5. Extract parameters
         success, yaml_file = self.extract_parameters(imu_num)
         
         if success:

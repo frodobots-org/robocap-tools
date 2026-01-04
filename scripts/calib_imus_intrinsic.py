@@ -91,8 +91,8 @@ Examples:
             config.output_rosbag,
             imu_src_rate=200,
             video_rate=None,
-            trim_start_seconds=300,  # 去除前5分钟
-            trim_end_seconds=300     # 去除后5分钟
+            trim_start_seconds=300,  # Trim first 5 minutes
+            trim_end_seconds=300     # Trim last 5 minutes
         ):
             CalibrationLogger.error("Failed to create rosbag. Aborting.")
             return 1

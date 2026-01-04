@@ -105,7 +105,7 @@ Examples:
         config.input_dir,
         config.output_rosbag,
         imu_src_rate=args.imu_rate,
-        video_rate=5.0  # 相机内参标定使用5fps
+        video_rate=5.0  # Camera intrinsic calibration uses 5fps
     ):
         CalibrationLogger.error("Failed to create rosbag. Aborting.")
         return 1
