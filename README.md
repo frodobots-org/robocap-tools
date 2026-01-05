@@ -396,3 +396,102 @@ See LICENSE file for details.
 ## Contributing
 
 Contributions are welcome! Please ensure all code comments and documentation are in English.
+
+## Automatic Calibration Workflow
+
+The system supports an automated calibration workflow where workers upload datasets through a web interface, and calibration tasks are automatically executed on EC2 instances.
+
+### Workflow Diagram
+
+```mermaid
+flowchart TD
+    A[Worker uploads dataset on Webpage] --> B{Which dataset uploaded?}
+    
+    B -->|Data5: IMU Intrinsic| C1[Hook triggers workflow]
+    B -->|Data6: Camera Calibration| C2[Hook triggers workflow]
+    B -->|Data7: Eye Camera| C3[Hook triggers workflow]
+    B -->|Data8: Left Camera| C4[Hook triggers workflow]
+    B -->|Data9: Right Camera| C5[Hook triggers workflow]
+    
+    C1 --> D[Load Balancer assigns EC2 instance]
+    C2 --> D
+    C3 --> D
+    C4 --> D
+    C5 --> D
+    
+    D --> E[EC2 downloads dataset from storage]
+    E --> F[EC2 starts calibration process]
+    
+    F --> G{Calibration Type}
+    G -->|Data5| H1[IMU Intrinsic Calibration<br/>10-20 minutes]
+    G -->|Data6| H2[Camera Intrinsic + Extrinsic<br/>10-20 minutes]
+    G -->|Data7| H3[Eye Camera Intrinsic + Extrinsic<br/>10-20 minutes]
+    G -->|Data8| H4[Left Camera Intrinsic + Extrinsic<br/>10-20 minutes]
+    G -->|Data9| H5[Right Camera Intrinsic + Extrinsic<br/>10-20 minutes]
+    
+    H1 --> I[Validate calibration results]
+    H2 --> I
+    H3 --> I
+    H4 --> I
+    H5 --> I
+    
+    I --> J{Results valid?}
+    
+    J -->|Yes| K1[Upload result files to S3 Bucket]
+    J -->|No| L[Mark as failed]
+    
+    K1 --> K2[Call REST API to notify backend]
+    L --> K2
+    
+    K2 --> M[Backend updates status in database]
+    M --> N[Webpage displays result to worker]
+    
+    N --> O{Worker sees result}
+    O -->|Pass| P[Worker knows calibration passed ✓]
+    O -->|Fail| Q[Worker knows calibration failed ✗]
+    
+    style A fill:#e1f5ff
+    style D fill:#fff4e1
+    style F fill:#ffe1f5
+    style I fill:#e1ffe1
+    style K1 fill:#f0e1ff
+    style N fill:#e1f5ff
+```
+
+### Workflow Steps
+
+1. **Data Upload**: Worker uploads one of the five dataset groups (data5-data9) through the web interface
+
+2. **Hook Trigger**: When upload completes, a webhook triggers the calibration workflow
+
+3. **EC2 Assignment**: Load balancer assigns an available EC2 instance for calibration
+
+4. **Data Download**: EC2 instance downloads the uploaded dataset
+
+5. **Calibration Execution**: 
+   - **Data5**: IMU intrinsic calibration (3 IMUs)
+   - **Data6**: Front camera intrinsic + extrinsic calibration
+   - **Data7**: Eye camera intrinsic + extrinsic calibration
+   - **Data8**: Left camera intrinsic + extrinsic calibration
+   - **Data9**: Right camera intrinsic + extrinsic calibration
+   - Each calibration task takes **10-20 minutes**
+
+6. **Result Validation**: Calibration results are validated for correctness
+
+7. **Result Upload**: 
+   - Valid results: Upload result files (YAML, PDF, TXT) to S3 Bucket
+   - Invalid results: Mark as failed
+
+8. **Status Notification**: REST API call notifies the backend system with calibration status (pass/fail)
+
+9. **Status Display**: Backend updates the database and displays the result on the worker's webpage
+
+10. **Worker Feedback**: Worker can see whether the calibration passed or failed for each dataset group
+
+### Key Features
+
+- **Automatic Processing**: No manual intervention required after data upload
+- **Scalable**: Load balancer distributes calibration tasks across multiple EC2 instances
+- **Real-time Status**: Workers can see calibration results in real-time on the web interface
+- **Result Storage**: All calibration results are stored in S3 for future reference
+- **Validation**: Results are validated before being marked as successful
