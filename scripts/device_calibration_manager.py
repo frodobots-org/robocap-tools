@@ -107,7 +107,7 @@ class DeviceCalibrationManager:
             CalibrationTaskType.CAM_L_EXTRINSIC,
             CalibrationTaskType.CAM_R_EXTRINSIC
         ]:
-                if results.get(task_type, False):  # Only parse if successful
+            if results.get(task_type, False):  # Only parse if successful
                 task = get_task_by_type(task_type)
                 # Get output directory
                 import robocap_env
