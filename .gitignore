@@ -11,4 +11,6 @@ CMakeFiles/
 cmake_install.cmake
 *.png
 !example/data/**/*.png
-
+s3_config.json
+data
+dc0c9f0cd3efa0c6/

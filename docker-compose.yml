@@ -1,0 +1,12 @@
+services:
+  calibration-api:
+    image: robocap-calib
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./api:/robocap-tools/api
+      - ${DATA_PATH:-./data}:/data
+      - ${S3_CONFIG_FILE:-./s3_config.json}:/robocap-tools/s3sdk/s3_config.json:ro
+    entrypoint: ["/bin/bash", "/robocap-tools/api/entrypoint.sh"]
+    environment:
+      - PYTHONUNBUFFERED=1
