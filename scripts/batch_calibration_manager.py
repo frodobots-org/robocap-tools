@@ -19,6 +19,7 @@ if script_dir not in sys.path:
 from device_calibration_manager import DeviceCalibrationManager
 from result_recorder import ResultRecorder
 from s3_uploader import S3Uploader
+from results_report import ResultsReporter
 
 
 class BatchCalibrationManager:
@@ -28,7 +29,9 @@ class BatchCalibrationManager:
         self,
         scripts_dir: str,
         csv_file_path: str = "/tmp/calibration_results.csv",
-        s3_config_file: Optional[str] = None
+        s3_config_file: Optional[str] = None,
+        api_base_url: Optional[str] = None,
+        enable_api_reporting: bool = True
     ):
         """
         Initialize batch calibration manager
@@ -37,11 +40,15 @@ class BatchCalibrationManager:
             scripts_dir: Script directory path
             csv_file_path: CSV result file path
             s3_config_file: S3 configuration file path (optional)
+            api_base_url: API base URL for results reporting (optional, can also use CALIBRATION_API_URL env var)
+            enable_api_reporting: Whether to enable API reporting (default True)
         """
         self.scripts_dir = scripts_dir
         self.result_recorder = ResultRecorder(csv_file_path)
         # S3Uploader internally handles None case, try to use default configuration
         self.s3_uploader = S3Uploader(s3_config_file)
+        # ResultsReporter for API reporting
+        self.results_reporter = ResultsReporter(api_base_url=api_base_url, enabled=enable_api_reporting) if enable_api_reporting else None
     
     def discover_devices(self, data_root: str = "/data") -> List[str]:
         """
@@ -119,7 +126,8 @@ class BatchCalibrationManager:
                     device_id=device_id,
                     scripts_dir=self.scripts_dir,
                     result_recorder=self.result_recorder,
-                    s3_uploader=self.s3_uploader
+                    s3_uploader=self.s3_uploader,
+                    results_reporter=self.results_reporter
                 )
                 
                 results = manager.calibrate_all()
@@ -211,6 +219,19 @@ def main():
         help="S3 configuration file path (optional)"
     )
     
+    parser.add_argument(
+        "--api-url",
+        type=str,
+        default=None,
+        help="API base URL for results reporting (optional, can also use CALIBRATION_API_URL env var, default: http://127.0.0.1:6001)"
+    )
+    
+    parser.add_argument(
+        "--disable-api-reporting",
+        action="store_true",
+        help="Disable API results reporting"
+    )
+    
     args = parser.parse_args()
     
     # Determine script directory
@@ -221,7 +242,9 @@ def main():
     manager = BatchCalibrationManager(
         scripts_dir=args.scripts_dir,
         csv_file_path=args.csv_file,
-        s3_config_file=args.s3_config
+        s3_config_file=args.s3_config,
+        api_base_url=args.api_url,
+        enable_api_reporting=not args.disable_api_reporting
     )
     
     # Execute batch calibration

@@ -25,6 +25,7 @@ from calibration_executor import CalibrationExecutor
 from result_recorder import ResultRecorder
 from s3_uploader import S3Uploader
 from calibration_result_handler import CalibrationResultHandler
+from results_report import ResultsReporter
 
 
 class DeviceCalibrationManager:
@@ -35,7 +36,8 @@ class DeviceCalibrationManager:
         device_id: str,
         scripts_dir: str,
         result_recorder: Optional[ResultRecorder] = None,
-        s3_uploader: Optional[S3Uploader] = None
+        s3_uploader: Optional[S3Uploader] = None,
+        results_reporter: Optional[ResultsReporter] = None
     ):
         """
         Initialize device calibration manager
@@ -45,11 +47,13 @@ class DeviceCalibrationManager:
             scripts_dir: Script directory path
             result_recorder: Result recorder (optional)
             s3_uploader: S3 uploader (optional)
+            results_reporter: Results reporter for API reporting (optional)
         """
         self.device_id = device_id
         self.scripts_dir = scripts_dir
         self.result_recorder = result_recorder
         self.s3_uploader = s3_uploader
+        self.results_reporter = results_reporter
         self.executor = CalibrationExecutor(scripts_dir, device_id)
         
         # Set device ID
@@ -185,7 +189,68 @@ class DeviceCalibrationManager:
                     filename
                 )
         
+        # Report results to API database
+        if self.results_reporter:
+            self._report_calibration_results(task_type)
+        
         return True
+    
+    def _report_calibration_results(self, task_type: CalibrationTaskType) -> None:
+        """
+        Report calibration results to API database
+        
+        Args:
+            task_type: Calibration task type
+        """
+        # Get output directory based on task type
+        output_dir = None
+        if task_type == CalibrationTaskType.CAM_LR_FRONT_INTRINSIC:
+            output_dir = robocap_env.OUTPUT_IMUS_CAM_LR_FRONT_EXTRINSIC_DIR
+        elif task_type == CalibrationTaskType.CAM_LR_FRONT_EXTRINSIC:
+            output_dir = robocap_env.OUTPUT_IMUS_CAM_LR_FRONT_EXTRINSIC_DIR
+        elif task_type == CalibrationTaskType.CAM_LR_EYE_INTRINSIC:
+            output_dir = robocap_env.OUTPUT_IMUS_CAM_LR_EYE_EXTRINSIC_DIR
+        elif task_type == CalibrationTaskType.CAM_LR_EYE_EXTRINSIC:
+            output_dir = robocap_env.OUTPUT_IMUS_CAM_LR_EYE_EXTRINSIC_DIR
+        elif task_type == CalibrationTaskType.CAM_L_INTRINSIC:
+            output_dir = robocap_env.OUTPUT_IMUS_CAM_L_EXTRINSIC_DIR
+        elif task_type == CalibrationTaskType.CAM_L_EXTRINSIC:
+            output_dir = robocap_env.OUTPUT_IMUS_CAM_L_EXTRINSIC_DIR
+        elif task_type == CalibrationTaskType.CAM_R_INTRINSIC:
+            output_dir = robocap_env.OUTPUT_IMUS_CAM_R_EXTRINSIC_DIR
+        elif task_type == CalibrationTaskType.CAM_R_EXTRINSIC:
+            output_dir = robocap_env.OUTPUT_IMUS_CAM_R_EXTRINSIC_DIR
+        
+        if not output_dir or not os.path.exists(output_dir):
+            print(f"[Results Report] Warning: Output directory not found for {task_type.value}: {output_dir}")
+            return
+        
+        # Report based on task type
+        if task_type in [
+            CalibrationTaskType.CAM_L_INTRINSIC,
+            CalibrationTaskType.CAM_R_INTRINSIC,
+            CalibrationTaskType.CAM_LR_EYE_INTRINSIC,
+            CalibrationTaskType.CAM_LR_FRONT_INTRINSIC
+        ]:
+            # Report intrinsic calibration
+            self.results_reporter.report_intrinsic_calibration(
+                self.device_id,
+                task_type,
+                output_dir
+            )
+        elif task_type in [
+            CalibrationTaskType.CAM_L_EXTRINSIC,
+            CalibrationTaskType.CAM_R_EXTRINSIC,
+            CalibrationTaskType.CAM_LR_EYE_EXTRINSIC,
+            CalibrationTaskType.CAM_LR_FRONT_EXTRINSIC
+        ]:
+            # Report extrinsic calibration
+            self.results_reporter.report_extrinsic_calibration(
+                self.device_id,
+                task_type,
+                output_dir
+            )
+        # Note: IMU_INTRINSIC is not reported as there's no API endpoint for it
     
     def _cleanup_intermediate_files(
         self,
