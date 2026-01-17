@@ -111,7 +111,7 @@ class DeviceCalibrationManager:
             CalibrationTaskType.CAM_L_EXTRINSIC,
             CalibrationTaskType.CAM_R_EXTRINSIC
         ]:
-                if results.get(task_type, False):  # Only parse if successful
+            if results.get(task_type, False):  # Only parse if successful
                 task = get_task_by_type(task_type)
                 # Get output directory
                 import robocap_env
@@ -124,13 +124,13 @@ class DeviceCalibrationManager:
                     output_dir = robocap_env.OUTPUT_IMUS_CAM_L_EXTRINSIC_DIR
                 elif task_type == CalibrationTaskType.CAM_R_EXTRINSIC:
                     output_dir = robocap_env.OUTPUT_IMUS_CAM_R_EXTRINSIC_DIR
-                
+
                 if output_dir:
                     from extrinsic_result_parser import get_extrinsic_reprojection_errors
                     errors = get_extrinsic_reprojection_errors(output_dir, task_type.value)
                     if errors:
                         reprojection_errors[task_type] = errors
-        
+
         # Record results to CSV
         if self.result_recorder:
             self.result_recorder.record_device_result(

@@ -126,7 +126,6 @@ class KalibrExecutor:
             'rosrun kalibr kalibr_calibrate_imu_camera',
             '--perform-synchronization',
             '--bag', rosbag_path,
-            '--bag-from-to', '5 65',
             '--timeoffset-padding', '0.1',
             '--cam', camchain_file,
             '--imu'] + imu_yaml_files + [
