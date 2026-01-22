@@ -173,12 +173,15 @@ class DeviceCalibrationManager:
         # Clean up intermediate files (.log and .bag files) to save space, regardless of success or failure
         self._cleanup_intermediate_files(task_type, task)
         
-        if not execution_result['success']:
-            print(f"Execution failed: {execution_result.get('error_message', 'Unknown error')}")
-            return False
+        # Determine calibration success status
+        calibration_success = execution_result['success']
+        error_message = execution_result.get('error_message', None)
         
-        # Upload files to S3 (including YAML, PDF, TXT files)
-        if self.s3_uploader and execution_result['output_files']:
+        if not calibration_success:
+            print(f"Execution failed: {error_message or 'Unknown error'}")
+        
+        # Upload files to S3 (including YAML, PDF, TXT files) - only if successful
+        if calibration_success and self.s3_uploader and execution_result['output_files']:
             print(f"\n[Upload] Starting upload of {len(execution_result['output_files'])} files to S3...")
             for file_path in execution_result['output_files']:
                 filename = os.path.basename(file_path)
@@ -189,18 +192,25 @@ class DeviceCalibrationManager:
                     filename
                 )
         
-        # Report results to API database
+        # Report results to API database (always report, even if failed)
         if self.results_reporter:
-            self._report_calibration_results(task_type)
+            self._report_calibration_results(task_type, calibration_success, error_message)
         
-        return True
+        return calibration_success
     
-    def _report_calibration_results(self, task_type: CalibrationTaskType) -> None:
+    def _report_calibration_results(
+        self, 
+        task_type: CalibrationTaskType, 
+        calibration_success: bool = True,
+        error_message: Optional[str] = None
+    ) -> None:
         """
         Report calibration results to API database
         
         Args:
             task_type: Calibration task type
+            calibration_success: Whether calibration was successful
+            error_message: Error message if calibration failed
         """
         # Get output directory based on task type
         output_dir = None
@@ -221,9 +231,9 @@ class DeviceCalibrationManager:
         elif task_type == CalibrationTaskType.CAM_R_EXTRINSIC:
             output_dir = robocap_env.OUTPUT_IMUS_CAM_R_EXTRINSIC_DIR
         
-        if not output_dir or not os.path.exists(output_dir):
-            print(f"[Results Report] Warning: Output directory not found for {task_type.value}: {output_dir}")
-            return
+        # Determine errcode and errmsg
+        errcode = 0 if calibration_success else 1
+        errmsg = error_message if not calibration_success else None
         
         # Report based on task type
         if task_type in [
@@ -233,11 +243,25 @@ class DeviceCalibrationManager:
             CalibrationTaskType.CAM_LR_FRONT_INTRINSIC
         ]:
             # Report intrinsic calibration
-            self.results_reporter.report_intrinsic_calibration(
-                self.device_id,
-                task_type,
-                output_dir
-            )
+            # output_dir may be None if calibration failed, but we still try to report
+            if output_dir and os.path.exists(output_dir):
+                self.results_reporter.report_intrinsic_calibration(
+                    self.device_id,
+                    task_type,
+                    output_dir,
+                    errcode=errcode,
+                    errmsg=errmsg
+                )
+            else:
+                # No output directory (calibration failed before creating output)
+                # Still report failure to API
+                self.results_reporter.report_intrinsic_calibration(
+                    self.device_id,
+                    task_type,
+                    output_dir or "",  # Pass empty string if None
+                    errcode=errcode,
+                    errmsg=errmsg or "Calibration execution failed"
+                )
         elif task_type in [
             CalibrationTaskType.CAM_L_EXTRINSIC,
             CalibrationTaskType.CAM_R_EXTRINSIC,
@@ -245,11 +269,25 @@ class DeviceCalibrationManager:
             CalibrationTaskType.CAM_LR_FRONT_EXTRINSIC
         ]:
             # Report extrinsic calibration
-            self.results_reporter.report_extrinsic_calibration(
-                self.device_id,
-                task_type,
-                output_dir
-            )
+            # output_dir may be None if calibration failed, but we still try to report
+            if output_dir and os.path.exists(output_dir):
+                self.results_reporter.report_extrinsic_calibration(
+                    self.device_id,
+                    task_type,
+                    output_dir,
+                    errcode=errcode,
+                    errmsg=errmsg
+                )
+            else:
+                # No output directory (calibration failed before creating output)
+                # Still report failure to API
+                self.results_reporter.report_extrinsic_calibration(
+                    self.device_id,
+                    task_type,
+                    output_dir or "",  # Pass empty string if None
+                    errcode=errcode,
+                    errmsg=errmsg or "Calibration execution failed"
+                )
         # Note: IMU_INTRINSIC is not reported as there's no API endpoint for it
     
     def _cleanup_intermediate_files(
