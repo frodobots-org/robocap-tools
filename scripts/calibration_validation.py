@@ -346,21 +346,73 @@ class S3ResultsAnalyzer:
             s3_results_path = f"{device_id}/v1/results/"
             print(f"  Downloading {s3_results_path}...")
             
-            if not self.s3_sdk.folder_exists(s3_results_path):
-                print(f"  Warning: Results directory not found for {device_id}")
+            # Check if results exist (similar to web_download/app.py)
+            try:
+                objects = self.s3_sdk._client.list_objects(prefix=s3_results_path, delimiter=None)
+                # Filter out folder markers (keys ending with /)
+                files = [obj for obj in objects if 'Key' in obj and not obj['Key'].endswith('/')]
+                
+                if not files:
+                    print(f"  Warning: No results found for {device_id}")
+                    failed_results.append(ValidationResult(
+                        device_id=device_id,
+                        calibration_type="unknown",
+                        calibration_item="all",
+                        passed=False,
+                        reason="Results directory not found",
+                        details=f"No files found at {s3_results_path}"
+                    ))
+                    return passed_results, failed_results
+                
+                print(f"  Found {len(files)} files to download")
+                
+            except Exception as e:
+                print(f"  Error checking S3 path: {e}")
                 failed_results.append(ValidationResult(
                     device_id=device_id,
                     calibration_type="unknown",
                     calibration_item="all",
                     passed=False,
-                    reason="Results directory not found",
-                    details="S3 path does not exist"
+                    reason="S3 check failed",
+                    details=str(e)
                 ))
                 return passed_results, failed_results
             
-            download_results = self.s3_sdk.download_folder(s3_results_path, device_temp_dir)
+            # Download files (similar to web_download/app.py)
+            folder_key = s3_results_path
+            if not folder_key.endswith('/'):
+                folder_key += '/'
             
-            if not download_results:
+            successful_downloads = 0
+            for obj in files:
+                s3_key = obj['Key']
+                
+                if s3_key.endswith('/'):
+                    continue
+                
+                # Calculate relative path
+                if s3_key.startswith(folder_key):
+                    relative_path = s3_key[len(folder_key):]
+                else:
+                    relative_path = s3_key
+                
+                path_parts = relative_path.split('/')
+                path_parts = [part for part in path_parts if part]
+                local_file_path = os.path.join(device_temp_dir, *path_parts)
+                
+                # Create subdirectories
+                local_file_dir = os.path.dirname(local_file_path)
+                if local_file_dir and not os.path.exists(local_file_dir):
+                    os.makedirs(local_file_dir, exist_ok=True)
+                
+                # Download file
+                try:
+                    self.s3_sdk._client.download_file(s3_key, local_file_path)
+                    successful_downloads += 1
+                except Exception as e:
+                    print(f"  Warning: Failed to download {s3_key}: {e}")
+            
+            if successful_downloads == 0:
                 print(f"  Warning: No files downloaded for {device_id}")
                 failed_results.append(ValidationResult(
                     device_id=device_id,
@@ -368,9 +420,11 @@ class S3ResultsAnalyzer:
                     calibration_item="all",
                     passed=False,
                     reason="Download failed",
-                    details="No files found or download error"
+                    details="All file downloads failed"
                 ))
                 return passed_results, failed_results
+            
+            print(f"  Successfully downloaded {successful_downloads}/{len(files)} files")
             
             # Analyze intrinsic calibrations
             intrinsic_items = ['front', 'eye', 'left', 'right']
