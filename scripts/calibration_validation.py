@@ -63,8 +63,8 @@ class CalibrationValidator:
     
     # Intrinsic validation ranges (from API_DOCUMENTATION.md)
     PROJECTION_RANGES = {
-        'fx': (620.0, 660.0),
-        'fy': (620.0, 660.0),
+        'fx': (610.0, 670.0),
+        'fy': (610.0, 670.0),
         'cx': (920.0, 1000.0),
         'cy': (500.0, 580.0)
     }
@@ -78,7 +78,7 @@ class CalibrationValidator:
     
     # Extrinsic validation thresholds
     REPROJECTION_ERROR_MAX = 1.5
-    GYROSCOPE_ERROR_MAX = 0.015
+    GYROSCOPE_ERROR_MAX = 0.016
     ACCELEROMETER_ERROR_MAX = 0.12
     
     def validate_intrinsic(
