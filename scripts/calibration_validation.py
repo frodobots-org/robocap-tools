@@ -466,6 +466,9 @@ class S3ResultsAnalyzer:
                     passed_results.append(result)
                 else:
                     failed_results.append(result)
+            
+            # Print summary for this device
+            self._print_device_summary(device_id, passed_results, failed_results)
         
         except Exception as e:
             print(f"  Error analyzing device {device_id}: {e}")
@@ -477,6 +480,8 @@ class S3ResultsAnalyzer:
                 reason="Analysis error",
                 details=str(e)
             ))
+            # Print summary even if there was an error
+            self._print_device_summary(device_id, passed_results, failed_results)
         
         finally:
             # Clean up temporary directory
@@ -664,6 +669,70 @@ class S3ResultsAnalyzer:
             reason=reason,
             details=details
         )
+    
+    def _print_device_summary(
+        self,
+        device_id: str,
+        passed_results: List[ValidationResult],
+        failed_results: List[ValidationResult]
+    ):
+        """
+        Print validation summary for a single device
+        
+        Args:
+            device_id: Device ID
+            passed_results: List of passed validation results
+            failed_results: List of failed validation results
+        """
+        print(f"\n  {'='*70}")
+        print(f"  Device Summary: {device_id}")
+        print(f"  {'='*70}")
+        
+        # Group results by type
+        intrinsic_passed = [r for r in passed_results if r.calibration_type == 'intrinsic']
+        intrinsic_failed = [r for r in failed_results if r.calibration_type == 'intrinsic']
+        extrinsic_passed = [r for r in passed_results if r.calibration_type == 'extrinsic']
+        extrinsic_failed = [r for r in failed_results if r.calibration_type == 'extrinsic']
+        
+        # Print intrinsic summary
+        if intrinsic_passed or intrinsic_failed:
+            print(f"  Intrinsic Calibration:")
+            for result in sorted(intrinsic_passed + intrinsic_failed, key=lambda x: x.calibration_item):
+                status = "✓ PASSED" if result.passed else "✗ FAILED"
+                print(f"    {status:12} {result.calibration_item:8} - {result.reason or 'OK'}")
+                if not result.passed and result.details:
+                    # Print first line of details if too long
+                    details_short = result.details.split(';')[0] if ';' in result.details else result.details
+                    if len(details_short) > 60:
+                        details_short = details_short[:57] + "..."
+                    print(f"                  {details_short}")
+        
+        # Print extrinsic summary
+        if extrinsic_passed or extrinsic_failed:
+            print(f"  Extrinsic Calibration:")
+            for result in sorted(extrinsic_passed + extrinsic_failed, key=lambda x: x.calibration_item):
+                status = "✓ PASSED" if result.passed else "✗ FAILED"
+                print(f"    {status:12} {result.calibration_item:8} - {result.reason or 'OK'}")
+                if not result.passed and result.details:
+                    # Print first line of details if too long
+                    details_short = result.details.split(';')[0] if ';' in result.details else result.details
+                    if len(details_short) > 60:
+                        details_short = details_short[:57] + "..."
+                    print(f"                  {details_short}")
+        
+        # Overall status
+        total_passed = len(passed_results)
+        total_failed = len(failed_results)
+        total = total_passed + total_failed
+        
+        if total_failed == 0:
+            print(f"  {'='*70}")
+            print(f"  ✓ All {total} validations PASSED")
+        else:
+            print(f"  {'='*70}")
+            print(f"  ✗ {total_failed}/{total} validations FAILED")
+        
+        print(f"  {'='*70}\n")
 
 
 class ExcelReporter:
@@ -791,10 +860,21 @@ def main():
         '--device-id',
         type=str,
         default=None,
-        help='Single device ID to validate (optional, if not provided, validates all devices)'
+        help='Single device ID to validate (optional)'
+    )
+    
+    parser.add_argument(
+        '--device-list',
+        type=str,
+        default=None,
+        help='Path to file containing device ID list (one ID per line, optional)'
     )
     
     args = parser.parse_args()
+    
+    # Validate arguments: can only specify one of --device-id or --device-list
+    if args.device_id and args.device_list:
+        parser.error("Cannot specify both --device-id and --device-list. Please choose one.")
     
     # Setup temp directory
     if args.temp_dir:
@@ -821,6 +901,27 @@ def main():
     if args.device_id:
         devices = [args.device_id]
         print(f"Validating single device: {args.device_id}")
+    elif args.device_list:
+        # Read device IDs from file
+        if not os.path.exists(args.device_list):
+            print(f"Error: Device list file not found: {args.device_list}")
+            return 1
+        
+        try:
+            with open(args.device_list, 'r', encoding='utf-8') as f:
+                devices = [line.strip() for line in f if line.strip()]
+            
+            # Remove empty lines and comments (lines starting with #)
+            devices = [d for d in devices if d and not d.startswith('#')]
+            
+            if not devices:
+                print(f"Error: No device IDs found in file: {args.device_list}")
+                return 1
+            
+            print(f"Loaded {len(devices)} device ID(s) from file: {args.device_list}")
+        except Exception as e:
+            print(f"Error reading device list file: {e}")
+            return 1
     else:
         print("Listing all devices from S3...")
         devices = analyzer.list_all_devices()
