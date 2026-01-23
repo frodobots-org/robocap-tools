@@ -132,15 +132,64 @@ def find_intrinsic_result_file(output_dir: str, task_type: str) -> Optional[str]
         f"*intrinsic*results*.txt",
     ]
     
+    # Map task_type to strict matching patterns (avoid partial matches)
+    task_type_strict_patterns = {
+        'cam_lr_front_intrinsic': ['cam_lr_front_intrinsic', 'cam-lr-front-intrinsic'],
+        'cam_lr_eye_intrinsic': ['cam_lr_eye_intrinsic', 'cam-lr-eye-intrinsic'],
+        'cam_l_intrinsic': ['cam_l_intrinsic', 'cam-l-intrinsic'],  # Must NOT match cam_lr_*
+        'cam_r_intrinsic': ['cam_r_intrinsic', 'cam-r-intrinsic'],  # Must NOT match cam_lr_*
+    }
+    
+    strict_patterns = task_type_strict_patterns.get(task_type, [task_type])
+    
     for pattern in patterns:
         files = glob.glob(os.path.join(output_dir, pattern))
         if files:
-            # Prefer files matching task type
-            for f in files:
-                if task_type.replace('_', '-') in os.path.basename(f) or task_type in os.path.basename(f):
-                    return f
-            # If none found, return the first one
-            return files[0]
+            # Filter out extrinsic files - only keep intrinsic files
+            intrinsic_files = [f for f in files if 'intrinsic' in os.path.basename(f).lower() and 'extrinsic' not in os.path.basename(f).lower()]
+            
+            if not intrinsic_files:
+                continue
+            
+            # Strict matching: file must match exact task type pattern
+            for f in intrinsic_files:
+                basename = os.path.basename(f).lower()
+                
+                # Check if file matches any strict pattern
+                for strict_pattern in strict_patterns:
+                    strict_lower = strict_pattern.lower()
+                    if strict_lower in basename:
+                        # Additional validation: reject partial matches
+                        # For single camera (cam_l_intrinsic, cam_r_intrinsic), reject dual camera files
+                        if task_type == 'cam_l_intrinsic':
+                            # Reject if contains cam_lr_ (dual camera)
+                            if 'cam_lr_' in basename:
+                                continue
+                        elif task_type == 'cam_r_intrinsic':
+                            # Reject if contains cam_lr_ (dual camera)
+                            if 'cam_lr_' in basename:
+                                continue
+                        elif task_type == 'cam_lr_front_intrinsic':
+                            # Reject single camera files
+                            if ('cam_l_intrinsic' in basename and 'cam_lr_' not in basename) or \
+                               ('cam_r_intrinsic' in basename and 'cam_lr_' not in basename):
+                                continue
+                            # Reject eye files
+                            if 'eye_intrinsic' in basename and 'front_intrinsic' not in basename:
+                                continue
+                        elif task_type == 'cam_lr_eye_intrinsic':
+                            # Reject single camera files
+                            if ('cam_l_intrinsic' in basename and 'cam_lr_' not in basename) or \
+                               ('cam_r_intrinsic' in basename and 'cam_lr_' not in basename):
+                                continue
+                            # Reject front files
+                            if 'front_intrinsic' in basename and 'eye_intrinsic' not in basename:
+                                continue
+                        
+                        return f
+            
+            # Don't return wrong file - better to return None if no exact match
+            # return intrinsic_files[0]  # Removed
     
     return None
 

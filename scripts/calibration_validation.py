@@ -127,18 +127,31 @@ class CalibrationValidator:
             
             fx, fy, cx, cy = projection
             
+            # Print extracted values for debugging
+            print(f"    [{cam_name}] Projection values: fx={fx:.6f}, fy={fy:.6f}, cx={cx:.6f}, cy={cy:.6f}")
+            print(f"    [{cam_name}] Projection ranges: fx[{self.PROJECTION_RANGES['fx'][0]}, {self.PROJECTION_RANGES['fx'][1]}], "
+                  f"fy[{self.PROJECTION_RANGES['fy'][0]}, {self.PROJECTION_RANGES['fy'][1]}], "
+                  f"cx[{self.PROJECTION_RANGES['cx'][0]}, {self.PROJECTION_RANGES['cx'][1]}], "
+                  f"cy[{self.PROJECTION_RANGES['cy'][0]}, {self.PROJECTION_RANGES['cy'][1]}]")
+            
             # Check projection ranges
             if not (self.PROJECTION_RANGES['fx'][0] <= fx <= self.PROJECTION_RANGES['fx'][1]):
                 failures.append(f"{cam_name}: fx={fx:.2f} out of range [{self.PROJECTION_RANGES['fx'][0]}, {self.PROJECTION_RANGES['fx'][1]}]")
+                print(f"    [{cam_name}] ❌ fx={fx:.6f} FAILED validation")
             
             if not (self.PROJECTION_RANGES['fy'][0] <= fy <= self.PROJECTION_RANGES['fy'][1]):
                 failures.append(f"{cam_name}: fy={fy:.2f} out of range [{self.PROJECTION_RANGES['fy'][0]}, {self.PROJECTION_RANGES['fy'][1]}]")
+                print(f"    [{cam_name}] ❌ fy={fy:.6f} FAILED validation")
             
             if not (self.PROJECTION_RANGES['cx'][0] <= cx <= self.PROJECTION_RANGES['cx'][1]):
                 failures.append(f"{cam_name}: cx={cx:.2f} out of range [{self.PROJECTION_RANGES['cx'][0]}, {self.PROJECTION_RANGES['cx'][1]}]")
+                print(f"    [{cam_name}] ❌ cx={cx:.6f} FAILED validation (range: [{self.PROJECTION_RANGES['cx'][0]}, {self.PROJECTION_RANGES['cx'][1]}])")
+            else:
+                print(f"    [{cam_name}] ✓ cx={cx:.6f} PASSED validation")
             
             if not (self.PROJECTION_RANGES['cy'][0] <= cy <= self.PROJECTION_RANGES['cy'][1]):
                 failures.append(f"{cam_name}: cy={cy:.2f} out of range [{self.PROJECTION_RANGES['cy'][0]}, {self.PROJECTION_RANGES['cy'][1]}]")
+                print(f"    [{cam_name}] ❌ cy={cy:.6f} FAILED validation")
             
             # Validate distortion parameters
             if 'distortion' not in cam_data:
@@ -152,18 +165,29 @@ class CalibrationValidator:
             
             k1, k2, p1, p2 = distortion
             
+            # Print extracted values for debugging
+            print(f"    [{cam_name}] Distortion values: k1={k1:.6f}, k2={k2:.6f}, p1={p1:.6f}, p2={p2:.6f}")
+            print(f"    [{cam_name}] Distortion ranges: k1[{self.DISTORTION_RANGES['k1'][0]}, {self.DISTORTION_RANGES['k1'][1]}], "
+                  f"k2[{self.DISTORTION_RANGES['k2'][0]}, {self.DISTORTION_RANGES['k2'][1]}], "
+                  f"p1[{self.DISTORTION_RANGES['p1'][0]}, {self.DISTORTION_RANGES['p1'][1]}], "
+                  f"p2[{self.DISTORTION_RANGES['p2'][0]}, {self.DISTORTION_RANGES['p2'][1]}]")
+            
             # Check distortion ranges
             if not (self.DISTORTION_RANGES['k1'][0] <= k1 <= self.DISTORTION_RANGES['k1'][1]):
                 failures.append(f"{cam_name}: k1={k1:.4f} out of range [{self.DISTORTION_RANGES['k1'][0]}, {self.DISTORTION_RANGES['k1'][1]}]")
+                print(f"    [{cam_name}] ❌ k1={k1:.6f} FAILED validation")
             
             if not (self.DISTORTION_RANGES['k2'][0] <= k2 <= self.DISTORTION_RANGES['k2'][1]):
                 failures.append(f"{cam_name}: k2={k2:.4f} out of range [{self.DISTORTION_RANGES['k2'][0]}, {self.DISTORTION_RANGES['k2'][1]}]")
+                print(f"    [{cam_name}] ❌ k2={k2:.6f} FAILED validation")
             
             if not (self.DISTORTION_RANGES['p1'][0] <= p1 <= self.DISTORTION_RANGES['p1'][1]):
                 failures.append(f"{cam_name}: p1={p1:.4f} out of range [{self.DISTORTION_RANGES['p1'][0]}, {self.DISTORTION_RANGES['p1'][1]}]")
+                print(f"    [{cam_name}] ❌ p1={p1:.6f} FAILED validation")
             
             if not (self.DISTORTION_RANGES['p2'][0] <= p2 <= self.DISTORTION_RANGES['p2'][1]):
                 failures.append(f"{cam_name}: p2={p2:.4f} out of range [{self.DISTORTION_RANGES['p2'][0]}, {self.DISTORTION_RANGES['p2'][1]}]")
+                print(f"    [{cam_name}] ❌ p2={p2:.6f} FAILED validation")
         
         if failures:
             return False, "Parameters out of range", "; ".join(failures)
@@ -526,9 +550,22 @@ class S3ResultsAnalyzer:
         
         # Parse parameters (use directory containing the result file)
         result_dir = os.path.dirname(result_file) if result_file else results_dir
+        print(f"  Parsing intrinsic file: {result_file}")
+        print(f"  Using result_dir: {result_dir}, task_type: {task_type}")
+        
         params_dict = get_intrinsic_calibration_params(result_dir, task_type)
         
+        # Print parsed parameters for debugging
+        print(f"  Parsed params_dict keys: {list(params_dict.keys())}")
+        for cam_name, cam_data in params_dict.items():
+            print(f"  [{cam_name}] has keys: {list(cam_data.keys())}")
+            if 'projection' in cam_data:
+                print(f"  [{cam_name}] projection: {cam_data['projection']}")
+            if 'distortion' in cam_data:
+                print(f"  [{cam_name}] distortion: {cam_data['distortion']}")
+        
         # Validate
+        print(f"  Validating intrinsic for item: {item}")
         passed, reason, details = self.validator.validate_intrinsic(
             device_id, item, params_dict
         )
@@ -603,9 +640,18 @@ class S3ResultsAnalyzer:
         
         # Parse errors (use directory containing the result file)
         result_dir = os.path.dirname(result_file) if result_file else results_dir
+        print(f"  Parsing extrinsic file: {result_file}")
+        print(f"  Using result_dir: {result_dir}, task_type: {task_type}")
+        
         errors_dict = get_extrinsic_imu_errors(result_dir, task_type)
         
+        # Print parsed errors for debugging
+        print(f"  Parsed errors_dict keys: {list(errors_dict.keys())}")
+        for key, value in errors_dict.items():
+            print(f"  {key}: {value}")
+        
         # Validate
+        print(f"  Validating extrinsic for item: {item}")
         passed, reason, details = self.validator.validate_extrinsic(
             device_id, item, errors_dict
         )
