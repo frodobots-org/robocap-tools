@@ -755,6 +755,7 @@ class ExcelReporter:
         # Create sheets
         self.passed_sheet = self.workbook.create_sheet("Passed")
         self.failed_sheet = self.workbook.create_sheet("Failed")
+        self.failed_devices_sheet = self.workbook.create_sheet("Failed Devices")
         
         # Setup headers
         self._setup_headers()
@@ -766,10 +767,15 @@ class ExcelReporter:
         self.passed_sheet.append(passed_headers)
         self._format_header_row(self.passed_sheet[1])
         
-        # Failed sheet headers
+        # Failed sheet headers (detailed failures)
         failed_headers = ["Device ID", "Failed Type", "Failed Item", "Reason", "Details"]
         self.failed_sheet.append(failed_headers)
         self._format_header_row(self.failed_sheet[1])
+        
+        # Failed Devices sheet headers (one row per device)
+        failed_devices_headers = ["Device ID", "Failed Items", "Total Failed", "Total Passed"]
+        self.failed_devices_sheet.append(failed_devices_headers)
+        self._format_header_row(self.failed_devices_sheet[1])
     
     def _format_header_row(self, row):
         """Format header row with bold font and background color"""
@@ -788,24 +794,49 @@ class ExcelReporter:
             passed_results: List of passed validation results
             failed_results: List of failed validation results
         """
-        # Group passed results by device
-        passed_by_device = {}
-        for result in passed_results:
-            if result.device_id not in passed_by_device:
-                passed_by_device[result.device_id] = {
-                    'intrinsic': [],
-                    'extrinsic': []
+        # Group results by device
+        devices_summary = {}
+        
+        # Process all results to build device summary
+        all_results = passed_results + failed_results
+        for result in all_results:
+            device_id = result.device_id
+            if device_id not in devices_summary:
+                devices_summary[device_id] = {
+                    'intrinsic_passed': [],
+                    'intrinsic_failed': [],
+                    'extrinsic_passed': [],
+                    'extrinsic_failed': []
                 }
             
             if result.calibration_type == 'intrinsic':
-                passed_by_device[result.device_id]['intrinsic'].append(result.calibration_item)
+                if result.passed:
+                    devices_summary[device_id]['intrinsic_passed'].append(result.calibration_item)
+                else:
+                    devices_summary[device_id]['intrinsic_failed'].append(result.calibration_item)
             else:
-                passed_by_device[result.device_id]['extrinsic'].append(result.calibration_item)
+                if result.passed:
+                    devices_summary[device_id]['extrinsic_passed'].append(result.calibration_item)
+                else:
+                    devices_summary[device_id]['extrinsic_failed'].append(result.calibration_item)
         
-        # Add passed devices to sheet
-        for device_id, types in passed_by_device.items():
-            intrinsic_types = ", ".join(sorted(types['intrinsic'])) if types['intrinsic'] else "None"
-            extrinsic_types = ", ".join(sorted(types['extrinsic'])) if types['extrinsic'] else "None"
+        # Separate passed and failed devices
+        passed_devices = {}
+        failed_devices = {}
+        
+        for device_id, summary in devices_summary.items():
+            total_failed = len(summary['intrinsic_failed']) + len(summary['extrinsic_failed'])
+            if total_failed == 0:
+                # All validations passed
+                passed_devices[device_id] = summary
+            else:
+                # Has at least one failure
+                failed_devices[device_id] = summary
+        
+        # Add passed devices to Passed sheet
+        for device_id, summary in passed_devices.items():
+            intrinsic_types = ", ".join(sorted(summary['intrinsic_passed'])) if summary['intrinsic_passed'] else "None"
+            extrinsic_types = ", ".join(sorted(summary['extrinsic_passed'])) if summary['extrinsic_passed'] else "None"
             self.passed_sheet.append([
                 device_id,
                 intrinsic_types,
@@ -813,7 +844,27 @@ class ExcelReporter:
                 "Yes"
             ])
         
-        # Add failed results to sheet
+        # Add failed devices to Failed Devices sheet (one row per device, no duplicates)
+        for device_id, summary in failed_devices.items():
+            # Collect all failed items
+            failed_items = []
+            for item in summary['intrinsic_failed']:
+                failed_items.append(f"intrinsic-{item}")
+            for item in summary['extrinsic_failed']:
+                failed_items.append(f"extrinsic-{item}")
+            
+            failed_items_str = ", ".join(sorted(failed_items)) if failed_items else "Unknown"
+            total_failed = len(summary['intrinsic_failed']) + len(summary['extrinsic_failed'])
+            total_passed = len(summary['intrinsic_passed']) + len(summary['extrinsic_passed'])
+            
+            self.failed_devices_sheet.append([
+                device_id,
+                failed_items_str,
+                total_failed,
+                total_passed
+            ])
+        
+        # Add detailed failed results to Failed sheet (for reference)
         for result in failed_results:
             self.failed_sheet.append([
                 result.device_id,
