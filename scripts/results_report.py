@@ -488,6 +488,11 @@ class ResultsReporter:
         try:
             print(f"[Results Report] Reporting intrinsic calibration: {device_id}/{cam_type}")
             print(f"[Results Report] Endpoint: {endpoint}")
+            # Print HTTP POST payload for debugging/traceability
+            try:
+                print(f"[Results Report] HTTP POST payload (intrinsic): {data}")
+            except Exception as e:
+                print(f"[Results Report] Warning: Failed to print intrinsic payload: {e}")
             
             response = requests.post(
                 endpoint,
@@ -540,6 +545,11 @@ class ResultsReporter:
         try:
             print(f"[Results Report] Reporting extrinsic calibration: {device_id}/{cam_group}")
             print(f"[Results Report] Endpoint: {endpoint}")
+            # Print HTTP POST payload for debugging/traceability
+            try:
+                print(f"[Results Report] HTTP POST payload (extrinsic): {data}")
+            except Exception as e:
+                print(f"[Results Report] Warning: Failed to print extrinsic payload: {e}")
             
             response = requests.post(
                 endpoint,

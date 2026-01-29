@@ -69,15 +69,11 @@ Organize your dataset directory as follows:
 /data/
 └── {device_id}/
     └── v1/
-        ├── data1/              # Front camera intrinsic calibration data (left-front + right-front)
-        ├── data2/              # Eye camera intrinsic calibration data (left-eye + right-eye)
-        ├── data3/              # Left eye camera intrinsic calibration data
-        ├── data4/              # Right eye camera intrinsic calibration data
         ├── data5/              # IMU intrinsic calibration data (3 IMUs)
-        ├── data6/              # Front camera-IMU extrinsic calibration data
-        ├── data7/              # Eye camera-IMU extrinsic calibration data
-        ├── data8/              # Left eye camera-IMU extrinsic calibration data
-        ├── data9/              # Right eye camera-IMU extrinsic calibration data
+        ├── data6/              # Front camera intrinsic + camera-IMU extrinsic data
+        ├── data7/              # Eye camera intrinsic + camera-IMU extrinsic data
+        ├── data8/              # Left eye intrinsic + camera-IMU extrinsic data
+        ├── data9/              # Right eye intrinsic + camera-IMU extrinsic data
         └── results/            # Calibration results (output)
 ```
 
@@ -93,22 +89,10 @@ The system automatically merges all segment files for each IMU during calibratio
 
 ### Supported File Formats
 
-**data1 (Front Camera Intrinsic):**
-- Video files: `left-front.mp4`, `right-front.mp4`
-
-**data2 (Eye Camera Intrinsic):**
-- Video files: `left-eye.mp4`, `right-eye.mp4`
-
-**data3 (Left Eye Camera Intrinsic):**
-- Video files: `left-eye.mp4` (or `left.mp4`)
-
-**data4 (Right Eye Camera Intrinsic):**
-- Video files: `right-eye.mp4` (or `right.mp4`)
-
 **data5 (IMU Intrinsic):**
 - IMU files: `IMUWriter_dev{N}_session{S}_segment{G}.db` (multiple segments per device, typically 10-15 segments)
 
-**data6-data9 (Camera-IMU Extrinsic Calibration):**
+**data6-data9 (Camera Intrinsic + Camera-IMU Extrinsic Calibration):**
 - IMU files: `IMU0.db`, `IMU1.db`, `IMU2.db`
 - Video files: 
   - data6: `left-front.mp4`, `right-front.mp4`
@@ -123,16 +107,6 @@ The system automatically merges all segment files for each IMU during calibratio
 ```shell
 12d4730bb6a4382c/
 └── v1/
-    ├── data1/                          # Front camera intrinsic (left-front + right-front)
-    │   ├── left-front.mp4
-    │   └── right-front.mp4
-    ├── data2/                          # Eye camera intrinsic (left-eye + right-eye)
-    │   ├── left-eye.mp4
-    │   └── right-eye.mp4
-    ├── data3/                          # Left eye camera intrinsic
-    │   └── left-eye.mp4
-    ├── data4/                          # Right eye camera intrinsic
-    │   └── right-eye.mp4
     ├── data5/                          # IMU intrinsic (1.5 hours stationary recording)
     │   ├── IMUWriter_dev0_session4_segment1.db
     │   ├── IMUWriter_dev0_session4_segment2.db
@@ -145,24 +119,24 @@ The system automatically merges all segment files for each IMU during calibratio
     │   ├── IMUWriter_dev2_session4_segment1.db
     │   ├── IMUWriter_dev2_session4_segment2.db
     │   └── ...                         # dev2 segments
-    ├── data6/                          # Front camera-IMU extrinsic
+    ├── data6/                          # Front camera intrinsic + camera-IMU extrinsic
     │   ├── IMU0.db
     │   ├── IMU1.db
     │   ├── IMU2.db
     │   ├── left-front.mp4
     │   └── right-front.mp4
-    ├── data7/                          # Eye camera-IMU extrinsic
+    ├── data7/                          # Eye camera intrinsic + camera-IMU extrinsic
     │   ├── IMU0.db
     │   ├── IMU1.db
     │   ├── IMU2.db
     │   ├── left-eye.mp4
     │   └── right-eye.mp4
-    ├── data8/                          # Left eye camera-IMU extrinsic
+    ├── data8/                          # Left eye intrinsic + camera-IMU extrinsic
     │   ├── IMU0.db
     │   ├── IMU1.db
     │   ├── IMU2.db
     │   └── left-eye.mp4
-    ├── data9/                          # Right eye camera-IMU extrinsic
+    ├── data9/                          # Right eye intrinsic + camera-IMU extrinsic
     │   ├── IMU0.db
     │   ├── IMU1.db
     │   ├── IMU2.db
@@ -301,17 +275,13 @@ python3 /robocap-scripts/batch_calibration_manager.py \
 
 ### Batch Calibration Tasks
 
-Each device will be calibrated with the following 9 tasks in order:
+Each device will be calibrated with the following tasks in order (reusing the same datasets for camera intrinsic and camera-IMU extrinsic calibration):
 
-1. **data1**: Left-right front camera intrinsic calibration
-2. **data2**: Left-right eye camera intrinsic calibration
-3. **data3**: Left eye camera intrinsic calibration
-4. **data4**: Right eye camera intrinsic calibration
-5. **data5**: IMU intrinsic calibration (3 IMUs: imu0, imu1, imu2)
-6. **data6**: Left-right front camera-IMU extrinsic calibration
-7. **data7**: Left-right eye camera-IMU extrinsic calibration
-8. **data8**: Left eye camera-IMU extrinsic calibration
-9. **data9**: Right eye camera-IMU extrinsic calibration
+1. **data5**: IMU intrinsic calibration (3 IMUs: imu0, imu1, imu2)
+2. **data6**: Left-right front camera intrinsic + camera-IMU extrinsic calibration
+3. **data7**: Left-right eye camera intrinsic + camera-IMU extrinsic calibration
+4. **data8**: Left eye camera intrinsic + camera-IMU extrinsic calibration
+5. **data9**: Right eye camera intrinsic + camera-IMU extrinsic calibration
 
 ## Calibration Results
 
@@ -405,8 +375,8 @@ All calibration scripts support the following common options:
 ## Notes
 
 - All code comments and documentation are in English
-- **Data organization**: data1-4 are camera intrinsic calibration data, data5 is IMU intrinsic data (segment-based format), data6-9 are camera-IMU extrinsic calibration data
-- data5 uses segment-based file format (multiple segments per IMU), while data1-4 and data6-9 use simplified file names
+- **Data organization**: data5 is IMU intrinsic calibration data (segment-based format), data6-9 are shared camera intrinsic + camera-IMU extrinsic calibration data
+- data5 uses segment-based file format (multiple segments per IMU), while data6-9 use simplified file names
 - Intermediate files (.log and .bag) are automatically cleaned up after calibration
 - Calibration results include reprojection errors for extrinsic calibrations
 - The system supports automatic device discovery from the data directory structure
@@ -504,15 +474,11 @@ flowchart TD
 4. **Data Download**: EC2 instance downloads the uploaded dataset
 
 5. **Calibration Execution**: 
-   - **Data1**: Front camera intrinsic calibration (left-front + right-front)
-   - **Data2**: Eye camera intrinsic calibration (left-eye + right-eye)
-   - **Data3**: Left eye camera intrinsic calibration
-   - **Data4**: Right eye camera intrinsic calibration
    - **Data5**: IMU intrinsic calibration (3 IMUs)
-   - **Data6**: Front camera-IMU extrinsic calibration
-   - **Data7**: Eye camera-IMU extrinsic calibration
-   - **Data8**: Left eye camera-IMU extrinsic calibration
-   - **Data9**: Right eye camera-IMU extrinsic calibration
+   - **Data6**: Front camera intrinsic + camera-IMU extrinsic calibration (left-front + right-front)
+   - **Data7**: Eye camera intrinsic + camera-IMU extrinsic calibration (left-eye + right-eye)
+   - **Data8**: Left eye intrinsic + camera-IMU extrinsic calibration
+   - **Data9**: Right eye intrinsic + camera-IMU extrinsic calibration
    - Each calibration task takes **10-20 minutes**
 
 6. **Result Validation**: Calibration results are validated for correctness

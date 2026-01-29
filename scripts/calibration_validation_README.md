@@ -29,6 +29,25 @@ python scripts/calibration_validation.py \
   --device-id device001
 ```
 
+### 验证设备列表（从文件读取）
+
+```bash
+python scripts/calibration_validation.py \
+  --config s3sdk/s3_config.json \
+  --output validation_report.xlsx \
+  --device-list ids.txt
+```
+
+文件格式（`ids.txt`）：
+```
+3ccac2ac83ff9eb7
+28895e5d054f4a0f
+6147733576e45bbc
+8abb713cf25a1a62
+# 支持注释行（以 # 开头）
+d715e08e73870ac3
+```
+
 ### 指定临时目录
 
 ```bash
@@ -43,7 +62,10 @@ python scripts/calibration_validation.py \
 - `--config`: S3配置文件路径（默认: `s3_config.json`）
 - `--output`: 输出Excel文件路径（默认: `calibration_validation_report.xlsx`）
 - `--temp-dir`: 临时下载目录（默认: 系统临时目录）
-- `--device-id`: 可选，只验证指定设备（如果不提供，验证所有设备）
+- `--device-id`: 可选，只验证指定设备（不能与 `--device-list` 同时使用）
+- `--device-list`: 可选，从文件读取设备ID列表（每行一个ID，支持 `#` 注释，不能与 `--device-id` 同时使用）
+
+**注意**: 如果不提供 `--device-id` 或 `--device-list`，将验证S3中所有设备
 
 ## 输出说明
 
