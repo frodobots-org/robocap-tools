@@ -13,21 +13,22 @@ from typing import Optional, List
 class CalibrationTaskType(Enum):
     """Calibration task type enumeration"""
     IMU_INTRINSIC = "imu_intrinsic"  # data5: IMU intrinsic calibration (3 IMUs)
+    # Camera intrinsic/extrinsic tasks now share the same dataset groups (data6-9)
     CAM_LR_FRONT_INTRINSIC = "cam_lr_front_intrinsic"  # data6: Left-right front camera intrinsic
     CAM_LR_FRONT_EXTRINSIC = "cam_lr_front_extrinsic"  # data6: Left-right front camera extrinsic
     CAM_LR_EYE_INTRINSIC = "cam_lr_eye_intrinsic"  # data7: Left-right eye camera intrinsic
     CAM_LR_EYE_EXTRINSIC = "cam_lr_eye_extrinsic"  # data7: Left-right eye camera extrinsic
-    CAM_L_INTRINSIC = "cam_l_intrinsic"  # data8: Left camera intrinsic
-    CAM_L_EXTRINSIC = "cam_l_extrinsic"  # data8: Left camera extrinsic
-    CAM_R_INTRINSIC = "cam_r_intrinsic"  # data9: Right camera intrinsic
-    CAM_R_EXTRINSIC = "cam_r_extrinsic"  # data9: Right camera extrinsic
+    CAM_L_INTRINSIC = "cam_l_intrinsic"  # data8: Left eye camera intrinsic
+    CAM_L_EXTRINSIC = "cam_l_extrinsic"  # data8: Left eye camera extrinsic
+    CAM_R_INTRINSIC = "cam_r_intrinsic"  # data9: Right eye camera intrinsic
+    CAM_R_EXTRINSIC = "cam_r_extrinsic"  # data9: Right eye camera extrinsic
 
 
 @dataclass
 class CalibrationTask:
     """Calibration task definition"""
     task_type: CalibrationTaskType
-    data_dir: str  # Data directory (data5-data9)
+    data_dir: str  # Data directory (data5-data9: data5 for IMU intrinsic, data6-9 for camera intrinsics and camera-IMU extrinsics)
     script_name: str  # Script name to execute
     script_args: List[str]  # Script arguments
     expected_output_files: List[str]  # Expected output file list

@@ -164,22 +164,22 @@ class ConfigHelper:
         
         if mode == 'front':
             return CalibrationConfig(
-                input_dir=robocap_env.DATASET_IMUS_CAM_LR_FRONT_EXTRINSIC_DIR,
+                input_dir=robocap_env.DATASET_CAM_LR_FRONT_INTRINSIC_DIR,
                 output_rosbag=robocap_env.ROSBAG_FILE_CAM_LR_FRONT_INTRINSIC
             )
         elif mode == 'eye':
             return CalibrationConfig(
-                input_dir=robocap_env.DATASET_IMUS_CAM_LR_EYE_EXTRINSIC_DIR,
+                input_dir=robocap_env.DATASET_CAM_LR_EYE_INTRINSIC_DIR,
                 output_rosbag=robocap_env.ROSBAG_FILE_CAM_LR_EYE_INTRINSIC
             )
         elif mode == 'left':
             return CalibrationConfig(
-                input_dir=robocap_env.DATASET_IMUS_CAM_L_EXTRINSIC_DIR,
+                input_dir=robocap_env.DATASET_CAM_L_EYE_INTRINSIC_DIR,
                 output_rosbag=robocap_env.ROSBAG_FILE_CAM_L_INTRINSIC
             )
         elif mode == 'right':
             return CalibrationConfig(
-                input_dir=robocap_env.DATASET_IMUS_CAM_R_EXTRINSIC_DIR,
+                input_dir=robocap_env.DATASET_CAM_R_EYE_INTRINSIC_DIR,
                 output_rosbag=robocap_env.ROSBAG_FILE_CAM_R_INTRINSIC
             )
         return None

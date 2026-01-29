@@ -10,6 +10,12 @@ ROBOCAP_DEVICE_ID = os.environ.get("ROBOCAP_DEVICE_ID", _DEFAULT_DEVICE_ID)
 
 def _update_all_paths():
     global DATASET_IMUS_INTRINSIC_DIR
+    # Camera intrinsic data directories (now reuse data6-9, same as camera-IMU extrinsic)
+    global DATASET_CAM_LR_FRONT_INTRINSIC_DIR
+    global DATASET_CAM_LR_EYE_INTRINSIC_DIR
+    global DATASET_CAM_L_EYE_INTRINSIC_DIR
+    global DATASET_CAM_R_EYE_INTRINSIC_DIR
+    # Camera-IMU extrinsic data directories (data6-9)
     global DATASET_IMUS_CAM_LR_FRONT_EXTRINSIC_DIR
     global DATASET_IMUS_CAM_LR_EYE_EXTRINSIC_DIR
     global DATASET_IMUS_CAM_L_EXTRINSIC_DIR
@@ -36,7 +42,19 @@ def _update_all_paths():
     global YAML_FILE_IMU_RIGHT_1
     global YAML_FILE_IMU_LEFT_2
     
+    # IMU intrinsic data directory (data5)
     DATASET_IMUS_INTRINSIC_DIR = f"{DATASET_ROOT_DIR}/{ROBOCAP_DEVICE_ID}/v1/data5"
+    # Camera intrinsic data directories (reuse camera-IMU extrinsic data directories data6-9)
+    # Both intrinsic and extrinsic calibration for each camera share the same dataset group:
+    # - front cameras: data6
+    # - eye cameras:   data7
+    # - left eye:      data8
+    # - right eye:     data9
+    DATASET_CAM_LR_FRONT_INTRINSIC_DIR = f"{DATASET_ROOT_DIR}/{ROBOCAP_DEVICE_ID}/v1/data6"
+    DATASET_CAM_LR_EYE_INTRINSIC_DIR = f"{DATASET_ROOT_DIR}/{ROBOCAP_DEVICE_ID}/v1/data7"
+    DATASET_CAM_L_EYE_INTRINSIC_DIR = f"{DATASET_ROOT_DIR}/{ROBOCAP_DEVICE_ID}/v1/data8"
+    DATASET_CAM_R_EYE_INTRINSIC_DIR = f"{DATASET_ROOT_DIR}/{ROBOCAP_DEVICE_ID}/v1/data9"
+    # Camera-IMU extrinsic data directories (data6-9), same physical datasets as above
     DATASET_IMUS_CAM_LR_FRONT_EXTRINSIC_DIR = f"{DATASET_ROOT_DIR}/{ROBOCAP_DEVICE_ID}/v1/data6"
     DATASET_IMUS_CAM_LR_EYE_EXTRINSIC_DIR = f"{DATASET_ROOT_DIR}/{ROBOCAP_DEVICE_ID}/v1/data7"
     DATASET_IMUS_CAM_L_EXTRINSIC_DIR = f"{DATASET_ROOT_DIR}/{ROBOCAP_DEVICE_ID}/v1/data8"
@@ -136,6 +154,10 @@ def set_device_id(device_id: str) -> None:
 __all__ = [
     "DATASET_ROOT_DIR",
     "DATASET_IMUS_INTRINSIC_DIR",
+    "DATASET_CAM_LR_FRONT_INTRINSIC_DIR",
+    "DATASET_CAM_LR_EYE_INTRINSIC_DIR",
+    "DATASET_CAM_L_EYE_INTRINSIC_DIR",
+    "DATASET_CAM_R_EYE_INTRINSIC_DIR",
     "DATASET_IMUS_CAM_LR_FRONT_EXTRINSIC_DIR",
     "DATASET_IMUS_CAM_LR_EYE_EXTRINSIC_DIR",
     "DATASET_IMUS_CAM_L_EXTRINSIC_DIR",

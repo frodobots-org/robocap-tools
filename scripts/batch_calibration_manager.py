@@ -74,7 +74,8 @@ class BatchCalibrationManager:
             if not os.path.isdir(item_path):
                 continue
             
-            # Check if it contains v1/data5 directory (must have data5 to be considered a valid device)
+            # Check if it contains v1/data5 directory (IMU intrinsic data, required for all calibrations)
+            # Note: data5 is IMU intrinsic, data1-4 are camera intrinsics, data6-9 are camera-IMU extrinsics
             v1_data5_path = os.path.join(item_path, "v1", "data5")
             if os.path.exists(v1_data5_path):
                 device_ids.append(item)

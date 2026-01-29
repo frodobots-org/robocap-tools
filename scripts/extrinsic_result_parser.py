@@ -77,15 +77,66 @@ def find_extrinsic_result_file(output_dir: str, task_type: str) -> Optional[str]
         f"*-results-*.txt"
     ]
     
+    # Map task_type to expected filename patterns (strict matching)
+    task_type_to_patterns = {
+        'cam_lr_front_extrinsic': ['cam_lr_front_extrinsic', 'cam-lr-front-extrinsic', 'front_extrinsic', 'front-extrinsic'],
+        'cam_lr_eye_extrinsic': ['cam_lr_eye_extrinsic', 'cam-lr-eye-extrinsic', 'eye_extrinsic', 'eye-extrinsic'],
+        'cam_l_extrinsic': ['cam_l_extrinsic', 'cam-l-extrinsic', 'left_extrinsic', 'left-extrinsic'],
+        'cam_r_extrinsic': ['cam_r_extrinsic', 'cam-r-extrinsic', 'right_extrinsic', 'right-extrinsic'],
+    }
+    
+    expected_patterns = task_type_to_patterns.get(task_type, [task_type])
+    
     for pattern in patterns:
         files = glob.glob(os.path.join(output_dir, pattern))
         if files:
-            # Prefer files containing task type name
+            # Filter out intrinsic files - only keep extrinsic files
+            # Extrinsic files should contain "extrinsic" or "imucam" in filename
+            extrinsic_files = []
             for f in files:
-                if task_type in os.path.basename(f):
-                    return f
-            # If none found containing task type, return the first one
-            return files[0]
+                basename = os.path.basename(f).lower()
+                # Exclude intrinsic files
+                if 'intrinsic' in basename and 'extrinsic' not in basename:
+                    continue
+                # Include files with "extrinsic" or "imucam"
+                if 'extrinsic' in basename or 'imucam' in basename:
+                    extrinsic_files.append(f)
+            
+            if not extrinsic_files:
+                continue
+            
+            # Strict matching: file must contain one of the expected patterns
+            for f in extrinsic_files:
+                basename = os.path.basename(f).lower()
+                # Check if file matches any expected pattern
+                for expected_pattern in expected_patterns:
+                    expected_lower = expected_pattern.lower()
+                    if expected_lower in basename:
+                        # Additional check: ensure it's not a longer match
+                        # For cam_l_extrinsic, reject files with cam_lr_* or cam_l_*_* patterns that are longer
+                        if task_type == 'cam_l_extrinsic':
+                            # Reject if contains cam_lr_ or cam_l_eye or cam_l_front
+                            if 'cam_lr_' in basename or 'cam_l_eye' in basename or 'cam_l_front' in basename:
+                                continue
+                        elif task_type == 'cam_r_extrinsic':
+                            # Reject if contains cam_lr_ or cam_r_eye or cam_r_front
+                            if 'cam_lr_' in basename or 'cam_r_eye' in basename or 'cam_r_front' in basename:
+                                continue
+                        elif task_type == 'cam_lr_front_extrinsic':
+                            # Reject if contains cam_l_ or cam_r_ (single camera)
+                            if ('cam_l_extrinsic' in basename and 'cam_lr_' not in basename) or \
+                               ('cam_r_extrinsic' in basename and 'cam_lr_' not in basename):
+                                continue
+                        elif task_type == 'cam_lr_eye_extrinsic':
+                            # Reject if contains cam_l_ or cam_r_ (single camera)
+                            if ('cam_l_extrinsic' in basename and 'cam_lr_' not in basename) or \
+                               ('cam_r_extrinsic' in basename and 'cam_lr_' not in basename):
+                                continue
+                        
+                        return f
+            
+            # If no strict match found, don't return anything (better to fail than return wrong file)
+            # return extrinsic_files[0]  # Removed: don't return wrong file
     
     return None
 
