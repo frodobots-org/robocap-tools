@@ -2,7 +2,7 @@
 
 ## 0. Download Firmware
 
-[Download](https://ap-southeast-1.console.aws.amazon.com/s3/object/robocap-firmware?region=ap-southeast-1&prefix=robocap-update-1.1.1-20260127-1151.img)
+[Download](https://robocap-firmware.s3.ap-southeast-1.amazonaws.com/robocap-update-1.1.1-20260127-1151.img)
 
 ## 1. Install Flashing Tool
 
