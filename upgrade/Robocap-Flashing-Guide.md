@@ -2,7 +2,7 @@
 
 ## 0. Download Firmware
 
-[Download](https://robocap-firmware.s3.ap-southeast-1.amazonaws.com/robocap-update-0.1.3-20251203-1801.img)
+[Download](https://ap-southeast-1.console.aws.amazon.com/s3/object/robocap-firmware?region=ap-southeast-1&prefix=robocap-update-1.1.1-20260127-1151.img)
 
 ## 1. Install Flashing Tool
 
@@ -12,7 +12,7 @@
 
 The extracted folder includes these files:
 
-![](./rkdevtool.PNG)
+![](./robocap_update_1.png)
 
 ## 1.2 RK Driver Installation
 
@@ -25,14 +25,17 @@ The extracted folder includes these files:
 
 ## 2. Flash Firmware
 
-1. Open the RK Development Tool (v2.8), then switch to the **"Upgrade Firmware"** tab.
-2. Click **"Firmware"** to select your target firmware file.
-3. Click **"Upgrade"** to start flashing.
+1. Turn on the Robocap and wait for the red light to come on. Then, press and hold the button for 5 seconds. After that, the device will enter the burn-in mode. 
+2. Open the RK Development Tool (v2.8), then switch to the **"Upgrade Firmware"** tab.
+3. Then connect the USB to the Robocap.
+4. Click **"Firmware"** to select your target firmware file.
+5. Click **"Upgrade"** to start flashing.
 
 > Note: The tool will show *"No device found"* initially —  a **maskrom device** or **loader device** should be detected first.
 
-![](./upgrade.PNG)
-
+![](./robocap_update_2.png)
+![](./robocap_update_3.png)
+![](./robocap_update_4.png)
 ### How to enter maskrom/loader mode:
 
 - Method 1: Press and hold the **V+ button** on the WIFI board while powering on the device, until the tool detects a loader/maskrom device.
