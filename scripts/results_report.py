@@ -312,6 +312,8 @@ class ResultsReporter:
                 return False
             
             cam_group = cam_group_map[task_type]
+            # Check if dual camera (eye/front) or single camera (left/right) - must be defined before validation
+            is_dual_camera = cam_group in ['eye', 'front']
             
             # Validate parsed errors
             validation_failed = False
@@ -364,9 +366,6 @@ class ResultsReporter:
                     errcode = 1
                     errmsg = errmsg or validation_error or "Invalid extrinsic errors"
                     print(f"[Results Report] Warning: {errmsg}")
-            
-            # Check if dual camera (eye/front) or single camera (left/right)
-            is_dual_camera = cam_group in ['eye', 'front']
             
             # Default value for missing numeric fields when errcode != 0
             default_error_value = 999.0
