@@ -20,6 +20,7 @@ from device_calibration_manager import DeviceCalibrationManager
 from result_recorder import ResultRecorder
 from s3_uploader import S3Uploader
 from results_report import ResultsReporter
+from calibration_task import CalibrationTaskType, get_all_task_types
 
 
 class BatchCalibrationManager:
@@ -85,15 +86,17 @@ class BatchCalibrationManager:
     def calibrate_devices(
         self,
         device_ids: Optional[List[str]] = None,
-        auto_discover: bool = True
+        auto_discover: bool = True,
+        selected_tasks: Optional[List['CalibrationTaskType']] = None
     ) -> dict:
         """
         Calibrate multiple devices
-        
+
         Args:
             device_ids: List of device IDs (optional, if None and auto_discover=True then auto-discover)
             auto_discover: Whether to auto-discover devices (default True)
-            
+            selected_tasks: List of specific tasks to run (optional, if None run all tasks)
+
         Returns:
             Dictionary of calibration results for all devices
         """
@@ -130,8 +133,8 @@ class BatchCalibrationManager:
                     s3_uploader=self.s3_uploader,
                     results_reporter=self.results_reporter
                 )
-                
-                results = manager.calibrate_all()
+
+                results = manager.calibrate_all(selected_tasks=selected_tasks)
                 all_results[device_id] = results
                 
             except Exception as e:
@@ -232,7 +235,17 @@ def main():
         action="store_true",
         help="Disable API results reporting"
     )
-    
+
+    # Get valid task names for choices
+    valid_tasks = [t.value for t in CalibrationTaskType]
+    parser.add_argument(
+        "--tasks",
+        type=str,
+        nargs="+",
+        choices=valid_tasks,
+        help=f"List of specific tasks to run (default: all). Valid tasks: {', '.join(valid_tasks)}"
+    )
+
     args = parser.parse_args()
     
     # Determine script directory
@@ -248,10 +261,17 @@ def main():
         enable_api_reporting=not args.disable_api_reporting
     )
     
+    # Parse selected tasks
+    selected_tasks = None
+    if args.tasks:
+        selected_tasks = [CalibrationTaskType(t) for t in args.tasks]
+        print(f"Selected tasks: {', '.join(t.value for t in selected_tasks)}")
+
     # Execute batch calibration
     results = manager.calibrate_devices(
         device_ids=args.device_ids,
-        auto_discover=(args.device_ids is None)
+        auto_discover=(args.device_ids is None),
+        selected_tasks=selected_tasks
     )
     
     # Return exit code

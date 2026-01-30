@@ -7,7 +7,7 @@ Responsible for managing all calibration tasks for a single device
 
 import os
 import sys
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from pathlib import Path
 
 # Add script directory to path
@@ -59,24 +59,38 @@ class DeviceCalibrationManager:
         # Set device ID
         robocap_env.set_device_id(device_id)
     
-    def calibrate_all(self) -> Dict[CalibrationTaskType, bool]:
+    def calibrate_all(
+        self,
+        selected_tasks: Optional[List[CalibrationTaskType]] = None
+    ) -> Dict[CalibrationTaskType, bool]:
         """
-        Execute all calibration tasks (total timeout per device: 3 hours)
-        
+        Execute calibration tasks (total timeout per device: 3 hours)
+
+        Args:
+            selected_tasks: List of specific tasks to run (optional, if None run all tasks)
+
         Returns:
             Mapping from task type to success status
         """
         import time
         start_time = time.time()
         timeout_seconds = 10800  # 3 hours
-        
+
         print(f"\n{'='*80}")
         print(f"Start calibrating device: {self.device_id}")
         print(f"[Timeout] Total timeout per device: 3 hours")
         print(f"{'='*80}\n")
-        
+
         results = {}
-        task_types = get_all_task_types()
+        all_task_types = get_all_task_types()
+
+        # Filter tasks if selected_tasks is specified
+        if selected_tasks:
+            # Preserve execution order from all_task_types
+            task_types = [t for t in all_task_types if t in selected_tasks]
+            print(f"Running selected tasks: {', '.join(t.value for t in task_types)}")
+        else:
+            task_types = all_task_types
         
         for task_type in task_types:
             # Check total timeout
