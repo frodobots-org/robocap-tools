@@ -36,6 +36,14 @@ try:
 except ImportError:
     CalibrationStatus = None
 
+# Import results reporter for API reporting when running standalone
+try:
+    from calibration_task import CalibrationTaskType
+    from results_report import ResultsReporter
+except ImportError:
+    CalibrationTaskType = None
+    ResultsReporter = None
+
 
 def main():
     """Main function."""
@@ -137,9 +145,9 @@ Examples:
     )
     
     # Send result via callback
+    error_message = None if calibration_success else "Kalibr extrinsic calibration failed"
     if result_handler is not None:
         status = CalibrationStatus.SUCCESS if calibration_success else CalibrationStatus.FAILED
-        error_message = None if calibration_success else "Kalibr extrinsic calibration failed"
         result_handler.handle_camera_imu_extrinsic_result(
             device_id,
             args.mode,
@@ -147,6 +155,32 @@ Examples:
             rosbag_file=config.output_rosbag if calibration_success else None,
             camchain_file=config.camchain_file if calibration_success else None,
             error_message=error_message
+        )
+    
+    # Report result to API when --api-url or CALIBRATION_API_URL is set (standalone run)
+    api_url = getattr(args, 'api_url', None) or os.environ.get('CALIBRATION_API_URL')
+    if api_url and not getattr(args, 'disable_api_report', False) and ResultsReporter is not None and CalibrationTaskType is not None:
+        mode_to_task = {
+            'front': CalibrationTaskType.CAM_LR_FRONT_EXTRINSIC,
+            'eye': CalibrationTaskType.CAM_LR_EYE_EXTRINSIC,
+            'left': CalibrationTaskType.CAM_L_EXTRINSIC,
+            'right': CalibrationTaskType.CAM_R_EXTRINSIC,
+        }
+        mode_to_output_dir = {
+            'front': robocap_env.OUTPUT_IMUS_CAM_LR_FRONT_EXTRINSIC_DIR,
+            'eye': robocap_env.OUTPUT_IMUS_CAM_LR_EYE_EXTRINSIC_DIR,
+            'left': robocap_env.OUTPUT_IMUS_CAM_L_EXTRINSIC_DIR,
+            'right': robocap_env.OUTPUT_IMUS_CAM_R_EXTRINSIC_DIR,
+        }
+        task_type = mode_to_task[args.mode]
+        output_dir = mode_to_output_dir[args.mode]
+        reporter = ResultsReporter(api_base_url=api_url, enabled=True)
+        reporter.report_extrinsic_calibration(
+            device_id,
+            task_type,
+            output_dir if calibration_success and os.path.isdir(output_dir) else (output_dir or ""),
+            errcode=0 if calibration_success else 1,
+            errmsg=error_message
         )
     
     if not calibration_success:

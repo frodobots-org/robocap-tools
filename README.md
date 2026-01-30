@@ -231,6 +231,25 @@ python3 /robocap-scripts/calib_cams_imu_extrinsic.py left --device-id {device_id
 python3 /robocap-scripts/calib_cams_imu_extrinsic.py right --device-id {device_id}
 ```
 
+#### 4. Standalone Calibration with API Report
+
+When running a single calibration script (e.g. after re-recording and uploading one dataset), you can report the result to the server with `--api-url`. If omitted, the scripts use the `CALIBRATION_API_URL` environment variable when set.
+
+```shell
+# Report camera intrinsic result to API (e.g. eye cameras)
+python3 /robocap-scripts/calib_cams_intrinsic.py eye --device-id {device_id} --api-url http://host:6002
+
+# Report camera-IMU extrinsic result to API
+python3 /robocap-scripts/calib_cams_imu_extrinsic.py eye --device-id {device_id} --api-url http://host:6002
+
+# Disable API report even when CALIBRATION_API_URL is set
+python3 /robocap-scripts/calib_cams_intrinsic.py front --device-id {device_id} --disable-api-report
+```
+
+- **`--api-url`**: API base URL for result reporting. When set, the calibration result (success or failure) is POSTed to the server. You can also set `CALIBRATION_API_URL` instead of passing this option.
+- **`--disable-api-report`**: Do not report to the API even if `--api-url` or `CALIBRATION_API_URL` is set.
+- **Note**: IMU intrinsic calibration (`calib_imus_intrinsic.py`) accepts these options for consistency but has no API endpoint; no result is reported.
+
 ### Batch Calibration
 
 Automatically calibrate all devices with all calibration tasks:
@@ -357,6 +376,15 @@ All calibration scripts support the following common options:
 
 - `--device-id`: Device ID (required if not set via environment variable)
 - `--callback`: Path to callback module (optional)
+
+### Standalone Calibration Options (calib_xxx.py)
+
+When running `calib_cams_intrinsic.py` or `calib_cams_imu_extrinsic.py` alone, the following options control result reporting to the API:
+
+- **`--api-url`**: API base URL (e.g. `http://host:6002`). If set, the calibration result is reported to the server via HTTP POST. You can also use the `CALIBRATION_API_URL` environment variable instead.
+- **`--disable-api-report`**: Disable reporting to the API even when `--api-url` or `CALIBRATION_API_URL` is set.
+
+`calib_imus_intrinsic.py` accepts these options for consistency but does not report (no IMU intrinsic API endpoint).
 
 ### Batch Calibration Options
 

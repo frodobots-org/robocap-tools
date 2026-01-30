@@ -279,6 +279,17 @@ class ArgumentParserHelper:
             default=None,
             help='Path to Python module containing callback function for calibration results (optional)'
         )
+        parser.add_argument(
+            '--api-url',
+            type=str,
+            default=None,
+            help='API base URL for result reporting (e.g. http://host:6002). If set, calibration result is reported to the server. Can also use CALIBRATION_API_URL env var.'
+        )
+        parser.add_argument(
+            '--disable-api-report',
+            action='store_true',
+            help='Disable reporting calibration result to API even when --api-url or CALIBRATION_API_URL is set'
+        )
     
     @staticmethod
     def setup_device_id(args: argparse.Namespace) -> str:

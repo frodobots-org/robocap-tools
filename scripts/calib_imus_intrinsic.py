@@ -57,6 +57,7 @@ Examples:
     ArgumentParserHelper.add_common_args(parser)
     
     args = parser.parse_args()
+    # Note: IMU intrinsic has no API endpoint; --api-url/--disable-api-report are accepted for consistency but no result is reported to the server.
     
     # Setup device ID
     device_id = ArgumentParserHelper.setup_device_id(args)
